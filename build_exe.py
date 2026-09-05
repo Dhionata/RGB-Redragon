@@ -58,8 +58,13 @@ def build() -> int:
         "openrgb",
         "--clean",
         "-y",
-        "launcher.py",
     ]
+
+    version_file = Path("file_version_info.txt")
+    if version_file.exists():
+        args.extend(["--version-file", str(version_file)])
+
+    args.append("launcher.py")
 
     try:
         PyInstaller.__main__.run(args)
