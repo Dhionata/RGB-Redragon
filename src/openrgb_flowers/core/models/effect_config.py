@@ -11,6 +11,7 @@ from openrgb_flowers.core.exceptions import ConfigurationError
 class EffectConfig:
     """Strongly-typed configuration for the Flowers Blooming effect."""
 
+    effect_type: str = "blooming"
     fps: float = 30.0
     speed: float = 1.0
     max_flowers: int = 7
@@ -47,6 +48,7 @@ class EffectConfig:
     def to_dict(self) -> Dict[str, Any]:
         """Serializes config to dictionary."""
         return {
+            "effect_type": self.effect_type,
             "fps": self.fps,
             "speed": self.speed,
             "max_flowers": self.max_flowers,
@@ -70,6 +72,7 @@ class EffectConfig:
         bg_val = data.get("background_color", "#04080C")
         bg_rgb = ColorRGB.from_hex(bg_val) if isinstance(bg_val, str) else ColorRGB(*bg_val)
         cfg = cls(
+            effect_type=str(data.get("effect_type", "blooming")),
             fps=float(data.get("fps", 30.0)),
             speed=float(data.get("speed", 1.0)),
             max_flowers=int(data.get("max_flowers", 7)),

@@ -18,6 +18,19 @@ class ArgumentParserBuilder:
         )
 
         parser.add_argument(
+            "--effect",
+            "-e",
+            type=str,
+            default="blooming",
+            choices=["blooming", "random_blend"],
+            help="Lighting effect type / Tipo de efeito: 'blooming' (flores desabrochando) or 'random_blend' (todas as teclas iluminadas misturando cores aleatórias).",
+        )
+        parser.add_argument(
+            "--gui",
+            action="store_true",
+            help="Launch interactive graphical user interface / Abre a interface gráfica interativa.",
+        )
+        parser.add_argument(
             "--palette",
             "-p",
             type=str,

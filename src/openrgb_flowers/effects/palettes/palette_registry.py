@@ -8,6 +8,8 @@ from openrgb_flowers.effects.palettes.lotus_palette import LotusPalette
 from openrgb_flowers.effects.palettes.sunflower_palette import SunflowerPalette
 from openrgb_flowers.effects.palettes.lavender_palette import LavenderPalette
 from openrgb_flowers.effects.palettes.rainbow_palette import RainbowPalette
+from openrgb_flowers.effects.palettes.cyberpunk_palette import CyberpunkPalette
+from openrgb_flowers.effects.palettes.aurora_palette import AuroraPalette
 
 
 class PaletteRegistry:
@@ -20,6 +22,8 @@ class PaletteRegistry:
         "sunflower": SunflowerPalette,
         "lavender": LavenderPalette,
         "rainbow": RainbowPalette,
+        "cyberpunk": CyberpunkPalette,
+        "aurora": AuroraPalette,
     }
 
     @classmethod

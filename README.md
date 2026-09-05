@@ -1,53 +1,60 @@
-# 🌸 OpenRGB Flowers Blooming
+# 🌸 OpenRGB Flowers Blooming & Chromatic Blend
 
-High-performance, organic RGB lighting effect for the **Redragon K556RGB-M** mechanical keyboard and the broader **OpenRGB** ecosystem.
+High-performance, organic RGB lighting effects for the **Redragon K556RGB-M** mechanical keyboard and the broader **OpenRGB** ecosystem.
 
-The effect simulates blooming flowers spreading organically across individual keyboard keys: floral buds sprout at stochastic locations, expand harmonic petal lobes, blend rich botanical color gradients, and gently dissolve into an ambient meadow breeze.
-
-Provided for the community in **two integration options**:
-1. **Standalone Python Package & CLI (`openrgb-python`)**: Production-ready, SOLID & DRY architecture, vectorized with NumPy, 24-bit TrueColor terminal live preview, and low-latency Direct mode transmission.
-2. **GLSL Fragment Shader for OpenRGB Effects Plugin (`flowers_blooming.frag`)**: Ready to copy & paste into the OpenRGB Effects Plugin Shader tab.
+Featuring **two distinct lighting effect engines**, **8 vibrant color palettes**, **native USB HID direct transmission**, and an **interactive graphical interface (GUI)** with real-time physical keyboard layout preview.
 
 ---
 
-## 🏛️ SOLID & DRY Design
+## 🎨 Effect Engines
 
-Strictly adhering to clean code standards:
-- **Single Responsibility**: Every class resides in its own file.
-- **Open/Closed**: New botanical palettes and blend strategies can be plugged in without modifying core engine code.
-- **Liskov Substitution**: Standardized interfaces (`ILayoutProvider`, `IFrameTransmitter`, `IBlendStrategy`).
-- **Interface Segregation**: Lean, focused interfaces in `core/interfaces/`.
-- **Dependency Inversion**: Decoupled from physical I/O via mockable abstractions.
+1. **🌸 Flowers Blooming (`blooming`)**:
+   - Stochastic floral blooms sprout across keyboard keys, expand harmonic petal lobes ($4, 5, 6, 8$ petals), and blend rich botanical gradients.
+2. **✨ Random Matrix Blend (`random_blend`)**:
+   - **100% of keys remain illuminated simultaneously**. Each key smoothly and asynchronously transitions between random colors from the selected palette using cubic Hermite (*smoothstep*) interpolation, producing an organic, ever-shifting chromatic tapestry.
 
 ---
 
-## ⚡ Performance Highlights
+## 🖥️ Interactive GUI Dashboard
 
-- **Vectorized Color Math**: Coordinate grids, Euclidean distances with physical keyboard aspect ratio correction (~3.7:1), petal boundary falloffs, and HSV/RGB color mappings run in vectorized NumPy routines.
-- **CPU Usage < 0.5%**: Frame rendering takes under 0.2 milliseconds.
-- **OpenRGB Direct Mode with `fast=True`**: Bypasses synchronous state updates, sending frames at up to 60 FPS smoothly without lag.
+Launch the modern dark-themed GUI with live canvas preview:
+
+```bash
+python -m openrgb_flowers --gui
+```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 CLI Usage
 
-### Installation
 ```bash
-pip install -e .
+# Launch interactive GUI:
+python -m openrgb_flowers --gui
+
+# Run Random Blend effect (all keys illuminated, shifting colors):
+python -m openrgb_flowers --effect random_blend --palette rainbow --speed 1.3
+
+# Run Blooming Flowers effect with Cyberpunk neon palette and terminal preview:
+python -m openrgb_flowers --effect blooming --palette cyberpunk --speed 1.0 --preview
+
+# Run Nordic Aurora on native Redragon K556RGB-M:
+python -m openrgb_flowers --effect random_blend --palette aurora --driver redragon
 ```
 
-### Running with OpenRGB
-Make sure OpenRGB is running with the SDK Server enabled (default port 6742).
-```bash
-openrgb-flowers --palette sakura --fps 30
-```
+---
 
-### Live Terminal Preview (Offline / Mock mode)
-```bash
-openrgb-flowers --mock --preview --palette lotus
-```
+## 🏛️ SOLID & DRY Architecture
 
-### Running Unit Tests
+- **Single Responsibility (SRP)**: Every model, engine, layout, and visualizer resides in its own isolated file.
+- **Open/Closed (OCP)**: New palettes and engines register dynamically via `PaletteRegistry` and `EffectEngineFactory`.
+- **Liskov Substitution (LSP)**: Interchangeable implementations for `IEffectEngine`, `ILayoutProvider`, and `IFrameTransmitter`.
+- **High Efficiency**: 100% vectorized NumPy rendering with zero per-frame heap allocations (< 0.5% CPU usage).
+- **Direct USB HID**: Native communication with Redragon K556RGB-M Interface 2 (`2E3C:C365`) in Mode 10 via Command `0x09`.
+
+---
+
+## 🧪 Unit Tests
+
 ```bash
-pytest
+python -m pytest tests -v
 ```

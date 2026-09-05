@@ -28,11 +28,17 @@ def main(args: Optional[list[str]] = None) -> int:
     parser = ArgumentParserBuilder.build()
     parsed_args = parser.parse_args(args)
 
+    # 0. Check if GUI mode requested
+    if getattr(parsed_args, "gui", False):
+        from openrgb_flowers.gui.app_window import launch_gui
+        return launch_gui()
+
     # 1. Load or build config
     if parsed_args.config:
         config = EffectConfig.load_json(parsed_args.config)
     else:
         config = EffectConfig(
+            effect_type=getattr(parsed_args, "effect", "blooming"),
             fps=parsed_args.fps,
             speed=parsed_args.speed,
             max_flowers=parsed_args.max_flowers,
@@ -62,9 +68,15 @@ def main(args: Optional[list[str]] = None) -> int:
     else:
         layout = K556LayoutProvider()
 
-    # 4. Palette & Engine
+    # 4. Palette & Engine via EffectEngineFactory
+    from openrgb_flowers.effects.effect_engine_factory import EffectEngineFactory
     palette = PaletteRegistry.get(config.palette_name)
-    engine = BloomingEngine(config=config, layout_provider=layout, palette=palette)
+    engine = EffectEngineFactory.create_engine(
+        effect_name=config.effect_type,
+        config=config,
+        layout_provider=layout,
+        palette=palette,
+    )
 
     # 5. Visualizer
     visualizer = TerminalVisualizer() if parsed_args.preview else None
