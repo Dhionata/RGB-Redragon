@@ -35,6 +35,12 @@ def build() -> int:
     print("Iniciando compilação do executável standalone OpenRGBFlowers.exe...")
     _patch_pyinstaller_winutils()
 
+    try:
+        import subprocess
+        subprocess.run(["taskkill", "/F", "/IM", "OpenRGBFlowers.exe", "/IM", "RedragonRGB.exe"], capture_output=True)
+    except Exception:
+        pass
+
     import PyInstaller.__main__
 
     args = [
