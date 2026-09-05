@@ -9,6 +9,7 @@ from openrgb_flowers.core.interfaces.i_color_palette import IColorPalette
 from openrgb_flowers.core.models.effect_config import EffectConfig
 from openrgb_flowers.core.models.render_frame import RenderFrame
 from openrgb_flowers.effects.palettes.palette_registry import PaletteRegistry
+from openrgb_flowers.math.fast_color import FastColorMath
 
 
 class RandomBlendEngine(IEffectEngine):
@@ -99,20 +100,14 @@ class RandomBlendEngine(IEffectEngine):
         # Vectorized color interpolation
         blended = self._current_rgb + (self._target_rgb - self._current_rgb) * smooth_t
 
-        # Apply global brightness
-        brightness = max(0.0, min(1.0, float(self._config.brightness)))
-        if brightness < 1.0:
-            blended *= brightness
-
-        # Gamma correction
-        if abs(self._config.gamma - 1.0) > 0.05:
-            # Normalized gamma: (c / 255) ^ (1/gamma) * 255
-            norm = np.clip(blended / 255.0, 0.0, 1.0)
-            blended = np.power(norm, 1.0 / self._config.gamma) * 255.0
-
-        # Clip and copy to pre-allocated uint8 array
-        np.clip(blended, 0.0, 255.0, out=blended)
-        self._output_colors[:] = blended.astype(np.uint8)
+        # Apply saturation, brightness, and gamma correction
+        final_uint8 = FastColorMath.apply_brightness_gamma(
+            blended,
+            brightness=self._config.brightness,
+            gamma=self._config.gamma,
+            saturation=self._config.saturation,
+        )
+        self._output_colors[:] = final_uint8
 
         return RenderFrame(
             timestamp=self._sim_time,
@@ -120,6 +115,15 @@ class RandomBlendEngine(IEffectEngine):
             colors=self._output_colors.copy(),
             led_count=self._led_count,
         )
+
+    def update_config(self, config: EffectConfig) -> None:
+        """Updates active runtime parameters on the fly without resetting transition states."""
+        palette_changed = config.palette_name != self._config.palette_name
+        self._config = config
+        if palette_changed:
+            self._palette = PaletteRegistry.get(config.palette_name)
+            # Reseed targets so keys smoothly blend towards the new palette
+            self._target_rgb[:] = self._sample_palette_colors(self._led_count)
 
     def reset(self) -> None:
         """Resets engine state and reseeds per-key color transitions."""

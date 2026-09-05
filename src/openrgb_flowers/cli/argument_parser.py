@@ -72,6 +72,12 @@ class ArgumentParserBuilder:
             help="Global brightness factor (0.0 to 1.0) / Brilho global.",
         )
         parser.add_argument(
+            "--saturation",
+            type=float,
+            default=1.0,
+            help="Color saturation multiplier (0.0 to 2.5, default 1.0) / Saturação de cor.",
+        )
+        parser.add_argument(
             "--blend",
             type=str,
             default="weighted",

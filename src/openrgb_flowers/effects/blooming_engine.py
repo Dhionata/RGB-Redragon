@@ -78,6 +78,24 @@ class BloomingEngine(IEffectEngine):
             (self._led_count, 1),
         )
 
+    def update_config(self, config: EffectConfig) -> None:
+        """Updates runtime configuration on the fly without stopping."""
+        palette_changed = config.palette_name != self._config.palette_name
+        blend_changed = config.blend_mode != self._config.blend_mode
+        bg_changed = config.background_color != self._config.background_color
+
+        self._config = config
+
+        if palette_changed:
+            self._palette = PaletteRegistry.get(config.palette_name)
+        if blend_changed:
+            self._blend_strategy = self._resolve_blend_strategy(config.blend_mode)
+        if bg_changed:
+            self._bg_base = np.tile(
+                np.array(self._config.background_color.to_tuple(), dtype=np.float32),
+                (self._led_count, 1),
+            )
+
     def reset(self) -> None:
         self._flowers.clear()
         self._frame_count = 0
@@ -187,11 +205,12 @@ class BloomingEngine(IEffectEngine):
         # 5. Blend layers
         blended = self._blend_strategy.blend_layers(base_colors, layer_colors, layer_intensities)
 
-        # 6. Apply brightness and gamma correction
+        # 6. Apply brightness, saturation, and gamma correction
         final_uint8 = FastColorMath.apply_brightness_gamma(
             blended.astype(np.float32),
             brightness=self._config.brightness,
             gamma=self._config.gamma,
+            saturation=self._config.saturation,
         )
 
         return RenderFrame(

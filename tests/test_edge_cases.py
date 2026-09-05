@@ -58,6 +58,13 @@ def test_effect_config_invalid_boundaries():
     with pytest.raises(ConfigurationError):
         EffectConfig(brightness=1.5).validate()
 
+    # Saturation out of range
+    with pytest.raises(ConfigurationError):
+        EffectConfig(saturation=-0.5).validate()
+    with pytest.raises(ConfigurationError):
+        EffectConfig(saturation=4.0).validate()
+
+
     # Petals invalid
     with pytest.raises(ConfigurationError):
         EffectConfig(petal_options=[1]).validate()

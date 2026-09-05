@@ -60,3 +60,20 @@ def test_random_blend_engine_brightness_clamping():
     frame = engine.tick(0.033)
     # 0.0 brightness should output all zeros
     assert np.all(frame.colors == 0)
+
+
+def test_random_blend_engine_update_config():
+    layout = K556MatrixLayoutProvider()
+    config = EffectConfig(effect_type="random_blend", palette_name="rainbow", speed=1.0)
+    engine = RandomBlendEngine(config=config, layout_provider=layout)
+
+    engine.tick(0.05)
+    new_cfg = EffectConfig(effect_type="random_blend", palette_name="cyberpunk", speed=2.5, saturation=1.8)
+    engine.update_config(new_cfg)
+
+    assert engine.get_config().speed == 2.5
+    assert engine.get_config().saturation == 1.8
+    assert engine._palette.get_name() == "cyberpunk"
+    frame = engine.tick(0.05)
+    assert frame.colors.shape == (132, 3)
+

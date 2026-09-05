@@ -22,7 +22,8 @@ class EffectConfig:
     background_color: ColorRGB = field(default_factory=lambda: ColorRGB(4, 8, 12))
     ambient_pulse: bool = True
     brightness: float = 1.0
-    gamma: float = 2.2
+    saturation: float = 1.0
+    gamma: float = 1.0
     host: str = "127.0.0.1"
     port: int = 6742
     device_name: Optional[str] = None
@@ -40,6 +41,8 @@ class EffectConfig:
             raise ConfigurationError(f"spawn_rate must be between 0.1 and 20.0, got {self.spawn_rate}")
         if not (0.0 <= self.brightness <= 1.0):
             raise ConfigurationError(f"brightness must be between 0.0 and 1.0, got {self.brightness}")
+        if not (0.0 <= self.saturation <= 3.0):
+            raise ConfigurationError(f"saturation must be between 0.0 and 3.0, got {self.saturation}")
         if not (0.5 <= self.gamma <= 3.5):
             raise ConfigurationError(f"gamma must be between 0.5 and 3.5, got {self.gamma}")
         if not self.petal_options or any(p < 3 for p in self.petal_options):
@@ -59,6 +62,7 @@ class EffectConfig:
             "background_color": self.background_color.to_hex(),
             "ambient_pulse": self.ambient_pulse,
             "brightness": self.brightness,
+            "saturation": self.saturation,
             "gamma": self.gamma,
             "host": self.host,
             "port": self.port,
@@ -83,7 +87,8 @@ class EffectConfig:
             background_color=bg_rgb,
             ambient_pulse=bool(data.get("ambient_pulse", True)),
             brightness=float(data.get("brightness", 1.0)),
-            gamma=float(data.get("gamma", 2.2)),
+            saturation=float(data.get("saturation", 1.0)),
+            gamma=float(data.get("gamma", 1.0)),
             host=str(data.get("host", "127.0.0.1")),
             port=int(data.get("port", 6742)),
             device_name=data.get("device_name"),

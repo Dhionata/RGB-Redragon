@@ -24,3 +24,20 @@ def test_engine_initialization_and_tick():
 
     assert frame.frame_index == 61
     assert engine.get_active_flower_count() <= config.max_flowers
+
+
+def test_blooming_engine_update_config():
+    config = EffectConfig(palette_name="sakura", speed=1.0, brightness=0.5, saturation=1.0)
+    layout = K556LayoutProvider()
+    engine = BloomingEngine(config=config, layout_provider=layout)
+
+    engine.tick(0.033)
+    new_cfg = EffectConfig(palette_name="sunflower", speed=2.0, brightness=1.0, saturation=1.5)
+    engine.update_config(new_cfg)
+
+    assert engine.get_config().speed == 2.0
+    assert engine.get_config().saturation == 1.5
+    assert engine._palette.get_name() == "sunflower"
+    frame = engine.tick(0.033)
+    assert frame.colors.shape == (layout.get_key_count(), 3)
+

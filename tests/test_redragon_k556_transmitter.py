@@ -85,8 +85,17 @@ def test_connect_initializes_mode_10(monkeypatch):
     assert mode_pkt[0] == 0x01
     assert mode_pkt[1] == 0x07
     assert mode_pkt[6] == 10  # Mode 10
+    assert mode_pkt[7] == 4   # Hardware Brightness 4 (Max)
 
     init_pkt = calls[1][0][0]
     assert init_pkt[0] == 0x01
     assert init_pkt[1] == 0x09
     assert init_pkt[2] == 0x20
+
+    # Test setting hardware brightness
+    tx.set_hardware_brightness(2)
+    assert mock_dev_instance.write.call_count == 3
+    bright_pkt = mock_dev_instance.write.call_args_list[2][0][0]
+    assert bright_pkt[1] == 0x07
+    assert bright_pkt[7] == 2
+

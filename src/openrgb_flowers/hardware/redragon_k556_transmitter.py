@@ -96,12 +96,13 @@ class RedragonK556Transmitter(IFrameTransmitter):
 
             # Switch keyboard microcontroller to Mode 10 (Custom LED Mode)
             # Discovered via Redragon WebHID agreement protocol (Command 0x07)
+            # Note: Hardware brightness on Redragon MCU ranges from 0 to 4 (4 is physical maximum)
             mode_pkt = bytearray(65)
             mode_pkt[0] = 0x01  # Report ID
             mode_pkt[1] = self.CMD_KEYBOARD_LIGHT  # 0x07
             mode_pkt[5] = 0x0E  # Payload length (14 bytes)
             mode_pkt[6] = self.MODE_CUSTOM  # Mode 10: Custom LED
-            mode_pkt[7] = 5     # Brightness: 5 (Maximum)
+            mode_pkt[7] = 4     # Brightness: 4 (Hardware Maximum PWM)
             mode_pkt[8] = 3     # Speed: 3
             mode_pkt[9] = 255   # Foreground Red
             mode_pkt[16] = 1    # FullColor: 1 (RGB)
@@ -125,6 +126,27 @@ class RedragonK556Transmitter(IFrameTransmitter):
             self._connected = False
             self._device = None
             return False
+
+    def set_hardware_brightness(self, level: int) -> None:
+        """Sets the keyboard microcontroller's internal hardware brightness level (0..4)."""
+        if not self.is_connected() or self._device is None:
+            return
+        clamped = max(0, min(4, int(level)))
+        mode_pkt = bytearray(65)
+        mode_pkt[0] = 0x01
+        mode_pkt[1] = self.CMD_KEYBOARD_LIGHT
+        mode_pkt[5] = 0x0E
+        mode_pkt[6] = self.MODE_CUSTOM
+        mode_pkt[7] = clamped
+        mode_pkt[8] = 3
+        mode_pkt[9] = 255
+        mode_pkt[16] = 1
+        mode_pkt[17] = 0
+        try:
+            self._device.write(mode_pkt)
+            logger.debug(f"Updated Redragon K556 hardware brightness to level {clamped}")
+        except Exception as e:
+            logger.warning(f"Failed to update hardware brightness: {e}")
 
     def disconnect(self) -> None:
         """Closes HID device connection gracefully."""

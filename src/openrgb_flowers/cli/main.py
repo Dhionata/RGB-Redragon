@@ -46,6 +46,7 @@ def main(args: Optional[list[str]] = None) -> int:
             palette_name=parsed_args.palette,
             blend_mode=parsed_args.blend,
             brightness=parsed_args.brightness,
+            saturation=getattr(parsed_args, "saturation", 1.0),
             host=parsed_args.host,
             port=parsed_args.port,
             device_name=parsed_args.device,

@@ -33,3 +33,8 @@ class IEffectEngine(ABC):
     def update_layout(self, layout_provider: Any) -> None:
         """Updates the physical layout provider and recomputes coordinate buffers."""
         pass
+
+    @abstractmethod
+    def update_config(self, config: EffectConfig) -> None:
+        """Updates active runtime parameters (speed, brightness, saturation, palette, etc.) on the fly."""
+        pass

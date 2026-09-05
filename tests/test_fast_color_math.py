@@ -55,3 +55,19 @@ def test_spatial_grid_aspect_ratio():
     assert dists[0] == 0.0
     # Corrected dx should be 0.1 * 3.7 = 0.37
     assert abs(dists[1] - 0.37) < 1e-4
+
+
+def test_apply_brightness_gamma_saturation():
+    # Test grayscale saturation collapse
+    rgb = np.array([[200.0, 100.0, 50.0]], dtype=np.float32)
+    gray = FastColorMath.apply_brightness_gamma(rgb, brightness=1.0, gamma=1.0, saturation=0.0)
+    # Saturation 0.0 produces identical R, G, B channels (monochrome)
+    assert gray[0, 0] == gray[0, 1] == gray[0, 2]
+
+    # Test full brightness and linear gamma preserves max values
+    rgb_full = np.array([[255.0, 128.0, 0.0]], dtype=np.float32)
+    res = FastColorMath.apply_brightness_gamma(rgb_full, brightness=1.0, gamma=1.0, saturation=1.0)
+    assert res[0, 0] == 255
+    assert res[0, 1] == 128
+    assert res[0, 2] == 0
+

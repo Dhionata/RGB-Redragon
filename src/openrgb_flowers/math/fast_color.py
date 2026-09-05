@@ -72,10 +72,26 @@ class FastColorMath:
         return c1 * (1.0 - t_col) + c2 * t_col
 
     @staticmethod
-    def apply_brightness_gamma(rgb_array: np.ndarray, brightness: float, gamma: float = 2.2) -> np.ndarray:
-        """Applies brightness scaling and gamma correction returning uint8 array of shape (N, 3)."""
+    def apply_brightness_gamma(
+        rgb_array: np.ndarray,
+        brightness: float,
+        gamma: float = 1.0,
+        saturation: float = 1.0,
+    ) -> np.ndarray:
+        """Applies saturation scaling, brightness scaling, and gamma correction returning uint8 array of shape (N, 3)."""
+        arr = rgb_array.copy()
+
+        # 1. Saturation adjustment via luminance vector projection
+        if abs(saturation - 1.0) > 0.01:
+            luma = arr[:, 0] * 0.299 + arr[:, 1] * 0.587 + arr[:, 2] * 0.114
+            arr = luma[:, np.newaxis] + (arr - luma[:, np.newaxis]) * float(saturation)
+
+        # 2. Brightness scaling
         b = max(0.0, min(1.0, float(brightness)))
-        scaled = np.clip(rgb_array * (b / 255.0), 0.0, 1.0)
+        scaled = np.clip(arr * (b / 255.0), 0.0, 1.0)
+
+        # 3. Gamma correction (optional)
         if abs(gamma - 1.0) > 0.01:
             scaled = np.power(scaled, gamma)
+
         return (scaled * 255.0).astype(np.uint8)
