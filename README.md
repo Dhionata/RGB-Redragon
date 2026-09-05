@@ -17,11 +17,18 @@ Featuring **two distinct lighting effect engines**, **8 vibrant color palettes**
 
 ## 🖥️ Interactive GUI Dashboard
 
-Launch the modern dark-themed GUI with live canvas preview:
+Launch the modern dark-themed GUI dashboard:
 
 ```bash
 python -m openrgb_flowers --gui
 ```
+
+### GUI Features
+- **Visualização em Tempo Real**: Pré-visualização animada contínua no teclado virtual da tela antes mesmo de iniciar o efeito.
+- **Controle Dinâmico ("Aplicar" e "Desfazer")**: Altere velocidade, saturação, paleta, brilho ou modo de efeito durante a execução e clique em **"✓ Aplicar"** para recarregar a quente sem interromper a transmissão USB, ou **"⟲ Desfazer"** para reverter.
+- **Contraste Aprimorado**: Caixas de seleção (comboboxes) em alto contraste, totalmente legíveis.
+- **Slider de Saturação**: Ajuste a vivacidade das cores de 0% (monocromático) a 200% (super saturado).
+- **Brilho Máximo do Hardware**: Nível de hardware configurado para o valor máximo do microcontrolador (nível 4) com gama linear para máxima intensidade luminosa dos LEDs.
 
 ---
 
@@ -31,8 +38,8 @@ python -m openrgb_flowers --gui
 # Launch interactive GUI:
 python -m openrgb_flowers --gui
 
-# Run Random Blend effect (all keys illuminated, shifting colors):
-python -m openrgb_flowers --effect random_blend --palette rainbow --speed 1.3
+# Run Random Blend effect (all keys illuminated, shifting colors, full saturation):
+python -m openrgb_flowers --effect random_blend --palette rainbow --speed 1.3 --saturation 1.5
 
 # Run Blooming Flowers effect with Cyberpunk neon palette and terminal preview:
 python -m openrgb_flowers --effect blooming --palette cyberpunk --speed 1.0 --preview
