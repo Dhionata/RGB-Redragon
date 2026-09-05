@@ -35,6 +35,8 @@ class WindowsStartupService(IAutoStartService):
                     return bool(val)
                 except FileNotFoundError:
                     return False
+        except FileNotFoundError:
+            return False
         except Exception as e:
             logger.warning(f"Failed to check autostart registry key: {e}")
             return False
@@ -48,7 +50,7 @@ class WindowsStartupService(IAutoStartService):
         cmd = self._resolve_launch_command(extra_args or "--autostart")
         try:
             import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self.REG_KEY_PATH, 0, winreg.KEY_SET_VALUE) as key:
+            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, self.REG_KEY_PATH, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.SetValueEx(key, self._app_name, 0, winreg.REG_SZ, cmd)
             logger.info(f"Registered Windows autostart: '{self._app_name}' -> '{cmd}'")
             return True
@@ -70,6 +72,8 @@ class WindowsStartupService(IAutoStartService):
                     return True
                 except FileNotFoundError:
                     return True
+        except FileNotFoundError:
+            return True
         except Exception as e:
             logger.error(f"Failed to disable autostart registry key: {e}")
             return False
