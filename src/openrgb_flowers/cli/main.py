@@ -1,0 +1,88 @@
+"""CLI entrypoint for running the Flowers Blooming effect."""
+from __future__ import annotations
+import logging
+import sys
+from typing import Optional
+
+from openrgb_flowers.cli.argument_parser import ArgumentParserBuilder
+from openrgb_flowers.core.models.effect_config import EffectConfig
+from openrgb_flowers.effects.blooming_engine import BloomingEngine
+from openrgb_flowers.effects.palettes.palette_registry import PaletteRegistry
+from openrgb_flowers.hardware.k556_layout_provider import K556LayoutProvider
+from openrgb_flowers.hardware.openrgb_transmitter import OpenRGBTransmitter
+from openrgb_flowers.hardware.mock_transmitter import MockTransmitter
+from openrgb_flowers.preview.terminal_visualizer import TerminalVisualizer
+from openrgb_flowers.service.runner_service import RunnerService
+
+
+def main(args: Optional[list[str]] = None) -> int:
+    """CLI main function."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    parser = ArgumentParserBuilder.build()
+    parsed_args = parser.parse_args(args)
+
+    # 1. Load or build config
+    if parsed_args.config:
+        config = EffectConfig.load_json(parsed_args.config)
+    else:
+        config = EffectConfig(
+            fps=parsed_args.fps,
+            speed=parsed_args.speed,
+            max_flowers=parsed_args.max_flowers,
+            spawn_rate=parsed_args.spawn_rate,
+            palette_name=parsed_args.palette,
+            blend_mode=parsed_args.blend,
+            brightness=parsed_args.brightness,
+            host=parsed_args.host,
+            port=parsed_args.port,
+            device_name=parsed_args.device,
+        )
+
+    config.validate()
+
+    # 2. Hardware Layout
+    layout = K556LayoutProvider()
+
+    # 3. Palette & Engine
+    palette = PaletteRegistry.get(config.palette_name)
+    engine = BloomingEngine(config=config, layout_provider=layout, palette=palette)
+
+    # 4. Transmitter
+    if parsed_args.mock:
+        transmitter = MockTransmitter()
+    else:
+        transmitter = OpenRGBTransmitter(
+            host=config.host,
+            port=config.port,
+            device_name=config.device_name,
+        )
+
+    # 5. Visualizer
+    visualizer = TerminalVisualizer() if parsed_args.preview else None
+
+    # 6. Service & Run
+    service = RunnerService(
+        engine=engine,
+        transmitter=transmitter,
+        layout_provider=layout,
+        config=config,
+        visualizer=visualizer,
+    )
+
+    try:
+        service.run(max_frames=parsed_args.max_frames)
+        return 0
+    except KeyboardInterrupt:
+        return 0
+    except Exception as e:
+        logging.error(f"Fatal error running Flowers Blooming effect: {e}", exc_info=True)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
