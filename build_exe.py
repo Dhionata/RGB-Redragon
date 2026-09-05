@@ -1,13 +1,43 @@
 """PyInstaller build script to generate standalone Windows executable."""
-import subprocess
+import os
+import shutil
 import sys
+from pathlib import Path
 
-def build():
-    print("Building standalone RedragonRGB.exe...")
-    cmd = [
-        sys.executable,
-        "-m",
-        "PyInstaller",
+
+def _patch_pyinstaller_winutils() -> None:
+    """Safely monkey-patches PyInstaller winutils on Windows to prevent pefile lock crashes."""
+    try:
+        from PyInstaller.utils.win32 import winutils
+
+        orig_timestamp = getattr(winutils, "set_exe_build_timestamp", None)
+        if orig_timestamp:
+            def safe_set_timestamp(exe_path, timestamp):
+                try:
+                    return orig_timestamp(exe_path, timestamp)
+                except Exception:
+                    pass
+            winutils.set_exe_build_timestamp = safe_set_timestamp
+
+        orig_checksum = getattr(winutils, "update_exe_pe_checksum", None)
+        if orig_checksum:
+            def safe_update_checksum(exe_path):
+                try:
+                    return orig_checksum(exe_path)
+                except Exception:
+                    pass
+            winutils.update_exe_pe_checksum = safe_update_checksum
+    except Exception:
+        pass
+
+
+def build() -> int:
+    print("Iniciando compilação do executável standalone OpenRGBFlowers.exe...")
+    _patch_pyinstaller_winutils()
+
+    import PyInstaller.__main__
+
+    args = [
         "--noconsole",
         "--onefile",
         "--name",
@@ -24,12 +54,36 @@ def build():
         "-y",
         "launcher.py",
     ]
-    result = subprocess.run(cmd)
-    if result.returncode == 0:
-        print("\n[SUCCESS] Standalone executable generated at: dist/OpenRGBFlowers.exe")
-    else:
-        print(f"\n[ERROR] Build failed with exit code: {result.returncode}")
-    return result.returncode
+
+    try:
+        PyInstaller.__main__.run(args)
+    except SystemExit as e:
+        if e.code != 0:
+            print(f"\n[ERROR] Falha na compilação com código: {e.code}")
+            return int(e.code)
+    except Exception as e:
+        print(f"\n[ERROR] Exceção durante compilação: {e}")
+        return 1
+
+    dist_dir = Path("dist")
+    primary_exe = dist_dir / "OpenRGBFlowers.exe"
+    alias_exe = dist_dir / "RedragonRGB.exe"
+
+    if primary_exe.exists():
+        try:
+            shutil.copyfile(primary_exe, alias_exe)
+        except Exception:
+            pass
+
+        print(f"\n[SUCCESS] Executáveis gerados com sucesso:")
+        print(f"  -> {primary_exe.resolve()}")
+        print(f"  -> {alias_exe.resolve()}")
+        return 0
+
+    print("\n[ERROR] Arquivo executável não encontrado após compilação.")
+    return 1
+
 
 if __name__ == "__main__":
     sys.exit(build())
+
