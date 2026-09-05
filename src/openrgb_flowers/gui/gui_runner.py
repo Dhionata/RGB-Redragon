@@ -36,6 +36,9 @@ class GuiRunner:
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._running = False
+        self._lock = threading.Lock()
+        self._pending_config: Optional[EffectConfig] = None
+        self._pending_effect_name: Optional[str] = None
 
     def is_running(self) -> bool:
         return self._running
@@ -65,6 +68,12 @@ class GuiRunner:
             self._thread.join(timeout=1.5)
         self._thread = None
         self._on_status("Parado / Idle", False)
+
+    def update_config(self, config: EffectConfig, effect_name: Optional[str] = None) -> None:
+        """Applies dynamic parameter changes to the running worker without reconnecting hardware."""
+        with self._lock:
+            self._pending_config = config
+            self._pending_effect_name = effect_name
 
     def _worker_loop(self, config: EffectConfig, effect_name: str, driver: str) -> None:
         """Worker loop executing on background thread."""
@@ -111,6 +120,31 @@ class GuiRunner:
             fps_counter = 0
 
             while not self._stop_event.is_set():
+                # Process any on-the-fly configuration/effect changes
+                with self._lock:
+                    if self._pending_config is not None:
+                        new_cfg = self._pending_config
+                        new_eff = self._pending_effect_name or effect_name
+                        self._pending_config = None
+                        self._pending_effect_name = None
+
+                        if new_eff != effect_name:
+                            effect_name = new_eff
+                            engine = EffectEngineFactory.create_engine(
+                                effect_name=effect_name,
+                                config=new_cfg,
+                                layout_provider=layout,
+                            )
+                            self._on_status(
+                                f"Transmitindo: {effect_name.upper()} | {transmitter.__class__.__name__} ({layout.get_key_count()} LEDs)",
+                                True,
+                            )
+                        else:
+                            engine.update_config(new_cfg)
+
+                        target_fps = max(10.0, float(new_cfg.fps))
+                        frame_interval = 1.0 / target_fps
+
                 t_start = time.perf_counter()
                 dt = min(0.1, max(0.001, t_start - prev_time))
                 prev_time = t_start

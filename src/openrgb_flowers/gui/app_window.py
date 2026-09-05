@@ -7,6 +7,8 @@ from typing import Dict, Any, Optional
 
 from openrgb_flowers.core.models.effect_config import EffectConfig
 from openrgb_flowers.core.models.render_frame import RenderFrame
+from openrgb_flowers.core.interfaces.i_effect_engine import IEffectEngine
+from openrgb_flowers.effects.effect_engine_factory import EffectEngineFactory
 from openrgb_flowers.hardware.k556_matrix_layout_provider import K556MatrixLayoutProvider
 from openrgb_flowers.gui.keyboard_canvas import KeyboardCanvas
 from openrgb_flowers.gui.control_panel import ControlPanel
@@ -51,8 +53,14 @@ class MainWindow(tk.Tk):
             on_fps_update=self._set_fps_threadsafe,
         )
 
-        # Start periodic GUI pump
+        # Real-time local preview simulation (animates on canvas when stopped)
+        self._preview_engine: Optional[IEffectEngine] = None
+        self._preview_effect_name = ""
+        self._init_preview_engine()
+
+        # Start periodic GUI pumps
         self._poll_frame_queue()
+        self._render_preview_tick()
 
         # Window closing handler
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -93,6 +101,9 @@ class MainWindow(tk.Tk):
             self,
             on_start=self._start_effect,
             on_stop=self._stop_effect,
+            on_change=self._on_settings_preview_change,
+            on_apply=self._on_apply_changes,
+            on_undo=self._on_undo_changes,
         )
         self._control_panel.pack(fill=tk.X, side=tk.TOP, padx=6, pady=4)
 
@@ -102,7 +113,7 @@ class MainWindow(tk.Tk):
 
         self._status_label = tk.Label(
             status_bar,
-            text="● Pronto para iniciar. Selecione o efeito e clique em Iniciar.",
+            text="● Pronto para iniciar. Pré-visualização ao vivo ativa.",
             bg=self.STATUS_BG,
             fg=self.TEXT_MUTED,
             font=("Segoe UI", 8),
@@ -117,6 +128,76 @@ class MainWindow(tk.Tk):
             font=("Segoe UI", 8, "bold"),
         )
         self._fps_label.pack(side=tk.RIGHT)
+
+    def _init_preview_engine(self) -> None:
+        """Initializes the local simulation engine for real-time canvas preview."""
+        settings = self._control_panel.get_current_settings()
+        self._preview_effect_name = settings["effect_type"]
+        config = self._settings_to_config(settings)
+        self._preview_engine = EffectEngineFactory.create_engine(
+            effect_name=self._preview_effect_name,
+            config=config,
+            layout_provider=self._layout_provider,
+        )
+
+    def _settings_to_config(self, settings: Dict[str, Any]) -> EffectConfig:
+        """Helper to create a validated EffectConfig from GUI settings."""
+        return EffectConfig(
+            effect_type=settings.get("effect_type", "blooming"),
+            palette_name=settings.get("palette", "rainbow"),
+            speed=float(settings.get("speed", 1.2)),
+            brightness=float(settings.get("brightness", 1.0)),
+            saturation=float(settings.get("saturation", 1.0)),
+            fps=float(settings.get("fps", 30.0)),
+            max_flowers=int(settings.get("max_flowers", 7)),
+        )
+
+    def _render_preview_tick(self) -> None:
+        """Renders real-time animation on canvas when effect is not actively transmitting to hardware."""
+        try:
+            if not self._runner.is_running() and self._preview_engine is not None:
+                frame = self._preview_engine.tick(0.033)
+                self._canvas_frame.update_frame(frame)
+        except Exception as e:
+            logger.debug(f"Preview animation tick: {e}")
+        finally:
+            self.after(33, self._render_preview_tick)
+
+    def _on_settings_preview_change(self, settings: Dict[str, Any]) -> None:
+        """Called instantaneously when any GUI widget is moved while stopped."""
+        if self._runner.is_running():
+            return
+        new_effect = settings.get("effect_type", "blooming")
+        config = self._settings_to_config(settings)
+        if new_effect != self._preview_effect_name or self._preview_engine is None:
+            self._preview_effect_name = new_effect
+            self._preview_engine = EffectEngineFactory.create_engine(
+                effect_name=new_effect,
+                config=config,
+                layout_provider=self._layout_provider,
+            )
+        else:
+            self._preview_engine.update_config(config)
+
+    def _on_apply_changes(self, settings: Dict[str, Any]) -> None:
+        """Called when user clicks '✓ Aplicar' during active execution."""
+        config = self._settings_to_config(settings)
+        effect_name = settings.get("effect_type", "blooming")
+        self._runner.update_config(config, effect_name)
+        if self._preview_engine is not None:
+            if effect_name != self._preview_effect_name:
+                self._preview_effect_name = effect_name
+                self._preview_engine = EffectEngineFactory.create_engine(
+                    effect_name=effect_name,
+                    config=config,
+                    layout_provider=self._layout_provider,
+                )
+            else:
+                self._preview_engine.update_config(config)
+
+    def _on_undo_changes(self) -> None:
+        """Called when user clicks '⟲ Desfazer' during active execution."""
+        pass
 
     def _enqueue_frame(self, frame: RenderFrame) -> None:
         """Called from background thread to enqueue new frame."""
@@ -157,15 +238,8 @@ class MainWindow(tk.Tk):
         self.after(0, _update)
 
     def _start_effect(self, settings: Dict[str, Any]) -> None:
-        """Starts effect execution."""
-        config = EffectConfig(
-            effect_type=settings["effect_type"],
-            palette_name=settings["palette"],
-            speed=settings["speed"],
-            brightness=settings["brightness"],
-            fps=settings["fps"],
-            max_flowers=settings["max_flowers"],
-        )
+        """Starts effect execution on hardware."""
+        config = self._settings_to_config(settings)
         self._runner.start(
             config=config,
             effect_name=settings["effect_type"],
@@ -175,6 +249,8 @@ class MainWindow(tk.Tk):
     def _stop_effect(self) -> None:
         """Stops background execution."""
         self._runner.stop()
+        # Immediately re-synchronize preview engine with current UI settings
+        self._on_settings_preview_change(self._control_panel.get_current_settings())
 
     def _on_close(self) -> None:
         """Graceful window close."""
