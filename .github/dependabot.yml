@@ -3,7 +3,7 @@
 
 version: 2
 updates:
-  # Python Dependencies (pip / pyproject.toml / setup.py)
+  # Python Dependencies (pip / pyproject.toml / setup.py / requirements.txt)
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -21,16 +21,3 @@ updates:
       python-dependencies:
         patterns:
           - "*"
-
-  # GitHub Actions Workflows
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-      timezone: "America/Sao_Paulo"
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "ci(deps)"
-
