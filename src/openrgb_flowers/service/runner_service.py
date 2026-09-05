@@ -11,6 +11,8 @@ from openrgb_flowers.core.interfaces.i_frame_transmitter import IFrameTransmitte
 from openrgb_flowers.core.interfaces.i_layout_provider import ILayoutProvider
 from openrgb_flowers.core.interfaces.i_visualizer import IVisualizer
 from openrgb_flowers.core.models.effect_config import EffectConfig
+from openrgb_flowers.core.exceptions import OpenRGBConnectionError
+from openrgb_flowers.hardware.layout_factory import LayoutFactory
 
 logger = logging.getLogger("openrgb_flowers.service")
 
@@ -58,6 +60,36 @@ class RunnerService:
 
         # Connect transmitter
         self._transmitter.connect()
+
+        if not self._transmitter.is_connected():
+            if self._visualizer is not None:
+                logger.warning(
+                    "Hardware transmitter not connected. Running simulation in preview-only mode."
+                )
+            else:
+                from openrgb_flowers.hardware.redragon_k556_transmitter import RedragonK556Transmitter
+                from openrgb_flowers.core.exceptions.hardware_connection_error import HardwareConnectionError
+                if isinstance(self._transmitter, RedragonK556Transmitter):
+                    raise HardwareConnectionError(
+                        "Cannot connect to Redragon K556RGB-M keyboard via direct USB HID (VID: 0x2E3C, PID: 0xC365). "
+                        "Please verify the keyboard is plugged in and no other software is holding an exclusive lock."
+                    )
+                raise OpenRGBConnectionError(
+                    f"Cannot connect to OpenRGB server at {self._config.host}:{self._config.port}. "
+                    "Please verify that OpenRGB is running and the SDK Server is started (SDK Server tab -> Start Server)."
+                )
+        else:
+            # Dynamically adapt physical layout if a connected OpenRGB device is present
+            device = getattr(self._transmitter, "device", None)
+            if device is not None:
+                dynamic_layout = LayoutFactory.create_layout(device)
+                self._layout = dynamic_layout
+                self._engine.update_layout(dynamic_layout)
+                logger.info(
+                    "Adapted simulation layout to device '%s' (%d keys/LEDs).",
+                    dynamic_layout.get_device_name(),
+                    dynamic_layout.get_key_count(),
+                )
 
         target_fps = self._config.fps
         frame_time = 1.0 / target_fps

@@ -9,8 +9,10 @@ from openrgb_flowers.core.models.effect_config import EffectConfig
 from openrgb_flowers.effects.blooming_engine import BloomingEngine
 from openrgb_flowers.effects.palettes.palette_registry import PaletteRegistry
 from openrgb_flowers.hardware.k556_layout_provider import K556LayoutProvider
-from openrgb_flowers.hardware.openrgb_transmitter import OpenRGBTransmitter
-from openrgb_flowers.hardware.mock_transmitter import MockTransmitter
+from openrgb_flowers.hardware.k556_matrix_layout_provider import K556MatrixLayoutProvider
+from openrgb_flowers.hardware.redragon_k556_transmitter import RedragonK556Transmitter
+from openrgb_flowers.hardware.transmitter_factory import TransmitterFactory
+from openrgb_flowers.core.exceptions import OpenRGBConnectionError, HardwareConnectionError
 from openrgb_flowers.preview.terminal_visualizer import TerminalVisualizer
 from openrgb_flowers.service.runner_service import RunnerService
 
@@ -45,22 +47,24 @@ def main(args: Optional[list[str]] = None) -> int:
 
     config.validate()
 
-    # 2. Hardware Layout
-    layout = K556LayoutProvider()
+    # 2. Resolve Driver & Transmitter
+    driver = "mock" if parsed_args.mock else getattr(parsed_args, "driver", "auto")
+    transmitter = TransmitterFactory.create_transmitter(
+        driver=driver,
+        host=config.host,
+        port=config.port,
+        device_name=config.device_name,
+    )
 
-    # 3. Palette & Engine
+    # 3. Hardware Layout: Hardware matrix for Redragon HID, ANSI layout for OpenRGB/Mock
+    if isinstance(transmitter, RedragonK556Transmitter):
+        layout = K556MatrixLayoutProvider()
+    else:
+        layout = K556LayoutProvider()
+
+    # 4. Palette & Engine
     palette = PaletteRegistry.get(config.palette_name)
     engine = BloomingEngine(config=config, layout_provider=layout, palette=palette)
-
-    # 4. Transmitter
-    if parsed_args.mock:
-        transmitter = MockTransmitter()
-    else:
-        transmitter = OpenRGBTransmitter(
-            host=config.host,
-            port=config.port,
-            device_name=config.device_name,
-        )
 
     # 5. Visualizer
     visualizer = TerminalVisualizer() if parsed_args.preview else None
@@ -79,6 +83,10 @@ def main(args: Optional[list[str]] = None) -> int:
         return 0
     except KeyboardInterrupt:
         return 0
+    except (OpenRGBConnectionError, HardwareConnectionError) as e:
+        logging.error("%s", e)
+        logging.info("Tip: Run with '--preview' or '--mock' to test the effect in terminal simulation.")
+        return 1
     except Exception as e:
         logging.error(f"Fatal error running Flowers Blooming effect: {e}", exc_info=True)
         return 1

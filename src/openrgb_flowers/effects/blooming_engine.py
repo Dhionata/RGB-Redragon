@@ -68,6 +68,16 @@ class BloomingEngine(IEffectEngine):
     def get_active_flower_count(self) -> int:
         return len(self._flowers)
 
+    def update_layout(self, layout_provider: ILayoutProvider) -> None:
+        """Updates the physical layout provider and recomputes coordinate buffers."""
+        self._layout = layout_provider
+        self._x_coords, self._y_coords = self._layout.get_coordinate_arrays()
+        self._led_count = self._layout.get_key_count()
+        self._bg_base = np.tile(
+            np.array(self._config.background_color.to_tuple(), dtype=np.float32),
+            (self._led_count, 1),
+        )
+
     def reset(self) -> None:
         self._flowers.clear()
         self._frame_count = 0

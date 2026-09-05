@@ -66,6 +66,13 @@ class ArgumentParserBuilder:
             help="Petal color blending strategy / Modo de mesclagem de cores.",
         )
         parser.add_argument(
+            "--driver",
+            type=str,
+            default="auto",
+            choices=["auto", "redragon", "openrgb", "mock"],
+            help="Hardware driver / Driver de transmissão: 'auto' (detects K556 else OpenRGB), 'redragon' (direct USB HID for K556RGB-M), 'openrgb' (OpenRGB SDK), or 'mock' (simulation).",
+        )
+        parser.add_argument(
             "--preview",
             action="store_true",
             help="Enable live 24-bit TrueColor terminal preview / Ativa visualização no terminal.",
@@ -73,7 +80,7 @@ class ArgumentParserBuilder:
         parser.add_argument(
             "--mock",
             action="store_true",
-            help="Run with mock transmitter without connecting to OpenRGB server / Executa sem OpenRGB.",
+            help="Alias for '--driver mock' / Executa em modo simulação sem hardware.",
         )
         parser.add_argument(
             "--host",

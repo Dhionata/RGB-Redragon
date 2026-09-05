@@ -1,5 +1,7 @@
 """Interface for effect generation engine."""
+from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import Any
 from openrgb_flowers.core.models.render_frame import RenderFrame
 from openrgb_flowers.core.models.effect_config import EffectConfig
 
@@ -25,4 +27,9 @@ class IEffectEngine(ABC):
     @abstractmethod
     def get_active_flower_count(self) -> int:
         """Returns number of currently blooming flowers."""
+        pass
+
+    @abstractmethod
+    def update_layout(self, layout_provider: Any) -> None:
+        """Updates the physical layout provider and recomputes coordinate buffers."""
         pass

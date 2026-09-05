@@ -1,4 +1,4 @@
-"""Custom typed domain exception hierarchy for openrgb-flowers."""
+"""Domain exceptions for openrgb-flowers."""
 from openrgb_flowers.core.exceptions.base_exception import OpenRGBFlowersError
 from openrgb_flowers.core.exceptions.connection_error import OpenRGBConnectionError
 from openrgb_flowers.core.exceptions.hardware_connection_error import HardwareConnectionError

@@ -134,3 +134,27 @@ class K556LayoutProvider(ILayoutProvider):
             led_idx += 1
 
         return keys
+
+    @classmethod
+    def find_coordinate_by_name(cls, raw_name: str) -> KeyCoordinate | None:
+        """Looks up physical coordinate by standard key or OpenRGB LED name."""
+        clean = (
+            raw_name.lower()
+            .replace("key:", "")
+            .replace("numpad", "num")
+            .replace("arrow", "")
+            .replace(" ", "")
+            .replace("_", "")
+            .replace("-", "")
+        )
+        for k in cls._build_k556_layout():
+            k_clean = (
+                k.name.lower()
+                .replace("arrow", "")
+                .replace(" ", "")
+                .replace("_", "")
+                .replace("-", "")
+            )
+            if clean == k_clean:
+                return k
+        return None

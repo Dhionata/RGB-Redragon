@@ -1,5 +1,6 @@
 """Terminal live preview visualizer with 24-bit TrueColor ANSI escape codes."""
 from __future__ import annotations
+import os
 import sys
 from typing import List
 from openrgb_flowers.core.interfaces.i_visualizer import IVisualizer
@@ -23,6 +24,12 @@ class TerminalVisualizer(IVisualizer):
         self._initialized = False
 
     def _setup_grid(self, layout: ILayoutProvider) -> None:
+        if os.name == "nt":
+            try:
+                os.system("")
+            except Exception:
+                pass
+
         keys = layout.get_coordinates()
         rows_dict: dict[int, list[KeyCoordinate]] = {}
         for k in keys:
