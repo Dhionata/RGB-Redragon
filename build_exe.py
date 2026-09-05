@@ -11,7 +11,7 @@ def build():
         "--noconsole",
         "--onefile",
         "--name",
-        "RedragonRGB",
+        "OpenRGBFlowers",
         "--paths",
         "src",
         "--collect-all",
@@ -26,7 +26,7 @@ def build():
     ]
     result = subprocess.run(cmd)
     if result.returncode == 0:
-        print("\n[SUCCESS] Standalone executable generated at: dist/RedragonRGB.exe")
+        print("\n[SUCCESS] Standalone executable generated at: dist/OpenRGBFlowers.exe")
     else:
         print(f"\n[ERROR] Build failed with exit code: {result.returncode}")
     return result.returncode
