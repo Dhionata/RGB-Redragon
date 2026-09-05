@@ -277,6 +277,29 @@ O driver nativo do Redragon K556RGB-M foi desenvolvido através de engenharia re
 
 ---
 
+## 📦 Compilação Nativa em C++ (Nuitka) & Executáveis Standalone
+
+O projeto oferece suporte à compilação nativa em C++ através do **Nuitka**, eliminando problemas de falsos positivos de packers e entregando máxima performance:
+
+```bash
+# Compilar versão Standalone / Portátil (Recomendado: 0 falsos positivos / Sem Static ML):
+python build_nuitka.py --standalone
+
+# Compilar arquivo executável único (.exe Onefile):
+python build_nuitka.py
+```
+
+Ou simplesmente dê um duplo clique no arquivo [`gerar_executavel.bat`](file:///gerar_executavel.bat), que apresenta um menu interativo para escolher o formato desejado.
+
+### 🌸 Minimização para a Bandeja do Windows (System Tray)
+- Ao clicar no botão **Minimizar (`_`)** ou no botão **Fechar (`X`)**, a janela do aplicativo é ocultada da tela e da barra de tarefas, ficando ativa na **Área de Notificação (Bandeja)** do Windows ao lado do relógio.
+- O efeito de iluminação continua rodando perfeitamente em segundo plano.
+- **Clique com o botão direito no ícone da flor na bandeja**:
+  - `🌸 Abrir Painel` (ou duplo clique): Restaura o painel gráfico com foco imediato.
+  - `✕ Encerrar`: Encerra o efeito de iluminação e finaliza a aplicação com segurança.
+
+---
+
 ## 🏛️ Arquitetura de Software (SOLID & DRY)
 
 O projeto foi construído seguindo rigorosamente os princípios de Clean Architecture:
@@ -286,13 +309,14 @@ O projeto foi construído seguindo rigorosamente os princípios de Clean Archite
   - Motores de iluminação: [`BloomingEngine`](file:///src/openrgb_flowers/effects/blooming_engine.py), [`RandomBlendEngine`](file:///src/openrgb_flowers/effects/random_blend_engine.py).
   - Transmissores de hardware: [`RedragonK556Transmitter`](file:///src/openrgb_flowers/hardware/redragon_k556_transmitter.py), [`OpenRGBTransmitter`](file:///src/openrgb_flowers/hardware/openrgb_transmitter.py), [`MockTransmitter`](file:///src/openrgb_flowers/hardware/mock_transmitter.py).
   - Serviços de persistência e sistema operacional: [`ConfigStorageService`](file:///src/openrgb_flowers/service/config_storage_service.py), [`WindowsStartupService`](file:///src/openrgb_flowers/service/windows_startup_service.py).
+  - Bandeja do sistema operacional: [`SystemTrayManager`](file:///src/openrgb_flowers/gui/system_tray.py).
   - Geometria e matemática: [`FlowerGeometry`](file:///src/openrgb_flowers/effects/flower_geometry.py), [`FastColorMath`](file:///src/openrgb_flowers/math/fast_color_math.py).
 - **Open/Closed Principle (OCP)**:
   Novas paletas e novos efeitos são registrados dinamicamente via `PaletteRegistry` e `EffectEngineFactory` sem necessidade de alterar as classes consumidoras.
 - **Liskov Substitution Principle (LSP)**:
   Qualquer implementação de `IEffectEngine` ou `IFrameTransmitter` pode ser substituída sem alterar o comportamento do `RunnerService`.
 - **Interface Segregation Principle (ISP)**:
-  Interfaces limpas e focadas (`IFrameTransmitter`, `IEffectEngine`, `ILayoutProvider`, `IAutoStartService`, `IConfigStorageService`).
+  Interfaces limpas e focadas (`IFrameTransmitter`, `IEffectEngine`, `ILayoutProvider`, `IAutoStartService`, `IConfigStorageService`, `ISystemTray`).
 - **Dependency Inversion Principle (DIP)**:
   Todas as classes de alto nível dependem de abstrações injetáveis via construtor.
 
@@ -311,7 +335,7 @@ openrgb_flowers_blooming/
 │       ├── cli/                     # Linha de comando e parsing de argumentos
 │       ├── core/
 │       │   ├── exceptions/          # Exceções tipadas de hardware e rede
-│       │   ├── interfaces/          # Contratos abstratos (Transmitter, Engine, Layout, Storage, Startup)
+│       │   ├── interfaces/          # Contratos abstratos (Transmitter, Engine, Layout, Storage, Startup, Tray)
 │       │   └── models/              # Estruturas de dados imutáveis (RGBColor, RenderFrame, EffectConfig)
 │       ├── effects/
 │       │   ├── blending/            # Estratégias de fusão de cores (Weighted, Screen, Additive)
@@ -319,14 +343,16 @@ openrgb_flowers_blooming/
 │       │   ├── blooming_engine.py   # Motor procedural de flores
 │       │   ├── random_blend_engine.py # Motor de mosaico cromático
 │       │   └── effect_engine_factory.py # Fábrica abstrata de efeitos
-│       ├── gui/                     # Painel gráfico dark, preview em canvas e runner assíncrono
+│       ├── gui/                     # Painel gráfico dark, preview em canvas, bandeja (System Tray) e runner
 │       ├── hardware/                # Transmissor WebHID Redragon K556 e layouts físicos
 │       ├── math/                    # Matemática rápida e interpolações vetorizadas
 │       ├── preview/                 # Visualizador TrueColor no terminal
 │       └── service/                 # Serviços de loop, inicialização no Windows e persistência
-├── tests/                           # 63 testes unitários e de integração com pytest
-├── build_exe.py                     # Script para compilação do executável standalone
-├── launcher.py                      # Ponto de entrada para o executável
+├── tests/                           # 64 testes automatizados com pytest
+├── build_nuitka.py                  # Compilador nativo C++ com Nuitka (Standalone & Onefile)
+├── build_exe.py                     # Compilador PyInstaller legado
+├── gerar_executavel.bat             # Menu interativo para gerar executáveis em 1 clique
+├── launcher.py                      # Ponto de entrada para os executáveis
 ├── run_gui.vbs                      # Inicializador silencioso em 1 clique (VBScript)
 ├── run_gui.bat                      # Inicializador em lote (Batch)
 ├── requirements.txt                 # Dependências de produção
@@ -340,7 +366,7 @@ openrgb_flowers_blooming/
 
 ## 🧪 Testes Automatizados
 
-O projeto conta com **63 testes automatizados** cobrindo matemática, interpolações, layouts de hardware, transmissão USB, interfaces e componentes de GUI:
+O projeto conta com **64 testes automatizados** cobrindo matemática, interpolações, layouts de hardware, transmissão USB, interfaces, bandeja do sistema e componentes de GUI:
 
 ```bash
 python -m pytest tests -v

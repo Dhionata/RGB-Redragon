@@ -277,6 +277,29 @@ The native Redragon K556RGB-M driver was developed through reverse engineering o
 
 ---
 
+## 📦 Native C++ Compilation (Nuitka) & Standalone Distributions
+
+The project supports high-performance native C++ compilation via **Nuitka**, avoiding packer-based heuristic false positives:
+
+```bash
+# Build Standalone / Portable directory (Recommended: 0 Static ML false positives):
+python build_nuitka.py --standalone
+
+# Build single executable (.exe Onefile):
+python build_nuitka.py
+```
+
+Alternatively, double-click [`gerar_executavel.bat`](file:///gerar_executavel.bat) to launch the interactive build menu.
+
+### 🌸 Windows System Tray Minimization
+- Clicking **Minimize (`_`)** or **Close (`X`)** hides the window from the screen and taskbar, keeping it active in the **Windows Notification Area (System Tray)** next to the clock.
+- Lighting effects continue executing uninterrupted in the background.
+- **Right-click the flower icon in the tray**:
+  - `🌸 Abrir Painel` (or double click): Restores the dashboard immediately.
+  - `✕ Encerrar`: Cleanly terminates lighting transmission and exits the application.
+
+---
+
 ## 🏛️ Software Architecture (SOLID & DRY)
 
 The codebase strictly adheres to Clean Architecture and software design best practices:
@@ -286,13 +309,14 @@ The codebase strictly adheres to Clean Architecture and software design best pra
   - Lighting engines: [`BloomingEngine`](file:///src/openrgb_flowers/effects/blooming_engine.py), [`RandomBlendEngine`](file:///src/openrgb_flowers/effects/random_blend_engine.py).
   - Hardware transmitters: [`RedragonK556Transmitter`](file:///src/openrgb_flowers/hardware/redragon_k556_transmitter.py), [`OpenRGBTransmitter`](file:///src/openrgb_flowers/hardware/openrgb_transmitter.py), [`MockTransmitter`](file:///src/openrgb_flowers/hardware/mock_transmitter.py).
   - Services: [`ConfigStorageService`](file:///src/openrgb_flowers/service/config_storage_service.py), [`WindowsStartupService`](file:///src/openrgb_flowers/service/windows_startup_service.py).
+  - System tray: [`SystemTrayManager`](file:///src/openrgb_flowers/gui/system_tray.py).
   - Math & Geometry: [`FlowerGeometry`](file:///src/openrgb_flowers/effects/flower_geometry.py), [`FastColorMath`](file:///src/openrgb_flowers/math/fast_color_math.py).
 - **Open/Closed Principle (OCP)**:
   New palettes and engines register dynamically via `PaletteRegistry` and `EffectEngineFactory` without modifying existing core code.
 - **Liskov Substitution Principle (LSP)**:
   Any `IEffectEngine` or `IFrameTransmitter` can be seamlessly substituted into `RunnerService`.
 - **Interface Segregation Principle (ISP)**:
-  Precise, minimal interfaces (`IFrameTransmitter`, `IEffectEngine`, `ILayoutProvider`, `IAutoStartService`, `IConfigStorageService`).
+  Precise, minimal interfaces (`IFrameTransmitter`, `IEffectEngine`, `ILayoutProvider`, `IAutoStartService`, `IConfigStorageService`, `ISystemTray`).
 - **Dependency Inversion Principle (DIP)**:
   High-level classes depend upon constructor-injected abstractions.
 
@@ -311,7 +335,7 @@ openrgb_flowers_blooming/
 │       ├── cli/                     # CLI argument parsing and execution
 │       ├── core/
 │       │   ├── exceptions/          # Typed hardware and network exceptions
-│       │   ├── interfaces/          # Contracts (Transmitter, Engine, Layout, Storage, Startup)
+│       │   ├── interfaces/          # Contracts (Transmitter, Engine, Layout, Storage, Startup, Tray)
 │       │   └── models/              # Immutable models (RGBColor, RenderFrame, EffectConfig)
 │       ├── effects/
 │       │   ├── blending/            # Color blending strategies (Weighted, Screen, Additive)
@@ -319,13 +343,15 @@ openrgb_flowers_blooming/
 │       │   ├── blooming_engine.py   # Procedural flower blooming engine
 │       │   ├── random_blend_engine.py # Chromatic mosaic blend engine
 │       │   └── effect_engine_factory.py # Effect factory
-│       ├── gui/                     # Dark control panel, canvas preview, and async runner
+│       ├── gui/                     # Dark control panel, canvas preview, system tray, and async runner
 │       ├── hardware/                # Redragon K556 WebHID transmitter and physical layouts
 │       ├── math/                    # Vectorized color math and interpolation
 │       ├── preview/                 # Terminal TrueColor live visualizer
 │       └── service/                 # Loop runners, Windows startup, and config persistence
-├── tests/                           # 63 automated unit and integration tests with pytest
-├── build_exe.py                     # Script to build standalone executable
+├── tests/                           # 64 automated unit and integration tests with pytest
+├── build_nuitka.py                  # Native C++ compiler with Nuitka (Standalone & Onefile)
+├── build_exe.py                     # Legacy PyInstaller compiler
+├── gerar_executavel.bat             # 1-click interactive build menu
 ├── launcher.py                      # Application launcher entry point
 ├── run_gui.vbs                      # 1-click silent VBScript launcher
 ├── run_gui.bat                      # 1-click batch launcher
@@ -340,7 +366,7 @@ openrgb_flowers_blooming/
 
 ## 🧪 Automated Tests & CI
 
-The repository includes **63 automated tests** verifying mathematical models, interpolation, hardware packet formatting, layout geometry, interfaces, and GUI behavior:
+The repository includes **64 automated tests** verifying mathematical models, interpolation, hardware packet formatting, layout geometry, interfaces, and GUI behavior:
 
 ```bash
 python -m pytest tests -v
