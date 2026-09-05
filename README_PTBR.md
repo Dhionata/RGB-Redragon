@@ -27,14 +27,17 @@ python -m openrgb_flowers --gui
 ```
 
 ### Recursos da Interface:
-- **Prévia do Teclado em Tempo Real**: Desenha o layout do teclado e acende as teclas exatamente com as cores emitidas para o hardware.
+- **Prévia do Teclado em Tempo Real**: Animação contínua ao vivo mesmo com o efeito parado. Ao mover qualquer controle, o teclado na tela responde instantaneamente.
+- **Ajustes a Quente ("✓ Aplicar" e "⟲ Desfazer")**: Modifique velocidade, saturação, brilho, paleta ou efeito enquanto o teclado físico estiver funcionando e clique em "✓ Aplicar" para atualizar sem desconectar do USB, ou "⟲ Desfazer" para reverter.
+- **Comboboxes em Alto Contraste**: Caixas de seleção com texto branco brilhante e fundo escuro em todos os estados, totalmente legíveis.
 - **Seletores Interativos**:
   - Escolha de Efeito (*Flores Desabrochando* vs *Mosaico Aleatório*).
   - Escolha de Paleta (8 paletas disponíveis).
   - Seleção de Driver de Hardware (*Auto*, *Redragon K556 Nativo*, *OpenRGB SDK*, *Simulação*).
 - **Controles Deslizantes Dinâmicos**:
   - Velocidade de transição (`0.2x` a `4.0x`).
-  - Brilho global (`10%` a `100%`).
+  - Brilho global (`10%` a `100%`) com escala de hardware no nível 4 máximo.
+  - Saturação de cores (`0%` monocromático a `200%` ultra saturado).
   - FPS Alvo (`15` a `60` FPS).
   - Máximo de flores simultâneas (no modo Blooming).
 - **Botões de Ação**: Iniciar e Parar sem travar a interface (execução em thread separada com consumo desprezível de CPU).
@@ -85,6 +88,7 @@ python -m openrgb_flowers --effect blooming --palette sakura --speed 1.2
 | `--driver` | `auto` | Driver: `auto` (K556 ou OpenRGB), `redragon` (USB HID nativo), `openrgb`, `mock` |
 | `--speed, -s` | `1.0` | Multiplicador de velocidade da animação |
 | `--brightness, -b` | `1.0` | Fator de brilho global (0.0 a 1.0) |
+| `--saturation` | `1.0` | Saturação de cores (0.0 a 2.5) |
 | `--fps` | `30.0` | Taxa de quadros alvo (15 a 60 FPS) |
 | `--max-flowers, -m` | `7` | Máximo de flores simultâneas (no efeito blooming) |
 | `--spawn-rate` | `1.4` | Taxa média de surgimento de novas flores por segundo |
@@ -103,14 +107,15 @@ O projeto segue estritamente as melhores práticas de engenharia de software:
 - **Open/Closed (OCP)**: Novos efeitos e paletas são integrados via `EffectEngineFactory` e `PaletteRegistry` sem modificar as classes existentes.
 - **Liskov Substitution (LSP)**: `BloomingEngine` e `RandomBlendEngine` implementam `IEffectEngine` de forma totalmente intercambiável.
 - **Zero-Allocation**: A renderização vetorizada via NumPy calcula frames em menos de 0.1ms, permitindo taxas de quadros altíssimas com menos de 0.5% de CPU.
-- **Redragon WebHID Nativo**: Comunicação direta via USB HID (`2E3C:C365`) no Modo 10 com o comando `0x09` em 8 chunks de 64 bytes.
+- **Redragon WebHID Nativo**: Comunicação direta via USB HID (`2E3C:C365`) no Modo 10 com o comando `0x09` em 8 chunks de 64 bytes e nível de brilho 4 máximo.
 
 ---
 
 ## 🧪 Testes Automatizados
 
-O projeto possui suíte completa de testes com **53 testes unitários**:
+O projeto possui suíte completa de testes com **59 testes unitários**:
 
 ```bash
 python -m pytest tests -v
 ```
+
