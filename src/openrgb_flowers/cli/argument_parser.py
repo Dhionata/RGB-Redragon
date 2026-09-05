@@ -133,5 +133,20 @@ class ArgumentParserBuilder:
             default=None,
             help="Optional maximum frames to render before exiting / Limite de quadros a renderizar.",
         )
+        parser.add_argument(
+            "--autostart",
+            action="store_true",
+            help="Run in background with saved user configuration (used by Windows startup) / Executa em segundo plano com as configurações salvas.",
+        )
+        parser.add_argument(
+            "--install-startup",
+            action="store_true",
+            help="Register application to run on Windows startup / Configura inicialização automática no Windows.",
+        )
+        parser.add_argument(
+            "--uninstall-startup",
+            action="store_true",
+            help="Remove application from Windows startup / Remove inicialização automática do Windows.",
+        )
 
         return parser

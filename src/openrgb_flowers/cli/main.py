@@ -25,8 +25,31 @@ def main(args: Optional[list[str]] = None) -> int:
         datefmt="%H:%M:%S",
     )
 
+    # Auto-default to GUI if running as a standalone frozen executable without CLI arguments
+    if args is None and len(sys.argv) == 1 and getattr(sys, "frozen", False):
+        args = ["--gui"]
+
     parser = ArgumentParserBuilder.build()
     parsed_args = parser.parse_args(args)
+
+    # Check startup install/uninstall actions
+    if getattr(parsed_args, "install_startup", False):
+        from openrgb_flowers.service.windows_startup_service import WindowsStartupService
+        svc = WindowsStartupService()
+        if svc.enable():
+            logging.info("✓ Aplicação configurada com sucesso para iniciar com o Windows!")
+            return 0
+        logging.error("✗ Falha ao registrar inicialização automática no Windows.")
+        return 1
+
+    if getattr(parsed_args, "uninstall_startup", False):
+        from openrgb_flowers.service.windows_startup_service import WindowsStartupService
+        svc = WindowsStartupService()
+        if svc.disable():
+            logging.info("✓ Inicialização com o Windows removida com sucesso.")
+            return 0
+        logging.error("✗ Falha ao remover registro de inicialização.")
+        return 1
 
     # 0. Check if GUI mode requested
     if getattr(parsed_args, "gui", False):
@@ -34,7 +57,11 @@ def main(args: Optional[list[str]] = None) -> int:
         return launch_gui()
 
     # 1. Load or build config
-    if parsed_args.config:
+    if getattr(parsed_args, "autostart", False):
+        from openrgb_flowers.service.config_storage_service import ConfigStorageService
+        config = ConfigStorageService().load_config()
+        logging.info("Iniciando em segundo plano via autostart do Windows...")
+    elif parsed_args.config:
         config = EffectConfig.load_json(parsed_args.config)
     else:
         config = EffectConfig(

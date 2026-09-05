@@ -27,6 +27,7 @@ def test_control_panel_initialization(tk_root):
         tk_root,
         on_start=lambda s: started_settings.append(s),
         on_stop=lambda: None,
+        load_saved=False,
     )
     settings = panel.get_current_settings()
     assert "effect_type" in settings
@@ -48,6 +49,7 @@ def test_control_panel_apply_and_undo(tk_root):
         on_stop=lambda: None,
         on_apply=lambda s: applied.append(s),
         on_undo=lambda: undone.append(True),
+        load_saved=False,
     )
 
     # Start effect

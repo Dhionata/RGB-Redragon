@@ -6,6 +6,11 @@ from typing import Callable, Dict, Any, Optional
 
 from openrgb_flowers.effects.palettes.palette_registry import PaletteRegistry
 from openrgb_flowers.effects.effect_engine_factory import EffectEngineFactory
+from openrgb_flowers.core.interfaces.autostart_service import IAutoStartService
+from openrgb_flowers.core.interfaces.config_storage_service import IConfigStorageService
+from openrgb_flowers.service.windows_startup_service import WindowsStartupService
+from openrgb_flowers.service.config_storage_service import ConfigStorageService
+from openrgb_flowers.core.models.effect_config import EffectConfig
 
 
 class ControlPanel(tk.Frame):
@@ -28,6 +33,9 @@ class ControlPanel(tk.Frame):
         on_change: Optional[Callable[[Dict[str, Any]], None]] = None,
         on_apply: Optional[Callable[[Dict[str, Any]], None]] = None,
         on_undo: Optional[Callable[[], None]] = None,
+        startup_service: Optional[IAutoStartService] = None,
+        config_storage: Optional[IConfigStorageService] = None,
+        load_saved: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(parent, bg=self.BG_COLOR, **kwargs)
@@ -40,9 +48,15 @@ class ControlPanel(tk.Frame):
         self._is_running = False
         self._active_settings: Dict[str, Any] = {}
 
+        # Persistent storage and autostart services (Dependency Injection)
+        self._startup_service = startup_service or WindowsStartupService()
+        self._config_storage = config_storage or ConfigStorageService()
+
         # Style configuration
         self._setup_styles()
         self._build_widgets()
+        if load_saved:
+            self._load_saved_settings()
 
         # Cache initial settings
         self._active_settings = self.get_current_settings()
@@ -386,6 +400,23 @@ class ControlPanel(tk.Frame):
         )
         self._edit_status_lbl.grid(row=5, column=0, sticky="ew", pady=(2, 0))
 
+        # Checkbox: Iniciar com o Windows
+        self._autostart_var = tk.BooleanVar(value=self._startup_service.is_enabled())
+        self._chk_autostart = tk.Checkbutton(
+            col3,
+            text=" Iniciar com o Windows",
+            variable=self._autostart_var,
+            command=self._on_autostart_toggled,
+            bg=self.PANEL_BG,
+            fg=self.TEXT_COLOR,
+            selectcolor="#252a36",
+            activebackground=self.PANEL_BG,
+            activeforeground=self.TEXT_COLOR,
+            font=("Segoe UI", 8),
+            cursor="hand2",
+        )
+        self._chk_autostart.grid(row=6, column=0, sticky="w", pady=(6, 0))
+
     def _on_effect_selected(self, event=None) -> None:
         is_blooming = "blooming" in self._effect_var.get().lower()
         if is_blooming:
@@ -482,6 +513,7 @@ class ControlPanel(tk.Frame):
         self._btn_undo.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
         self._edit_status_lbl.config(text="● Em execução no teclado", fg="#10b981")
 
+        self._save_current_config()
         self._on_start(settings)
 
     def _trigger_stop(self) -> None:
@@ -501,6 +533,7 @@ class ControlPanel(tk.Frame):
         self._btn_undo.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
         self._edit_status_lbl.config(text="✓ Alterações aplicadas!", fg="#10b981")
 
+        self._save_current_config()
         if self._on_apply:
             self._on_apply(current)
 
@@ -539,4 +572,62 @@ class ControlPanel(tk.Frame):
         self._btn_apply.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
         self._btn_undo.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
         self._edit_status_lbl.config(text="⚡ Visualização em tempo real", fg="#64748b")
+
+    def _on_autostart_toggled(self) -> None:
+        """Handles Windows autostart checkbutton toggle."""
+        enabled = self._autostart_var.get()
+        if enabled:
+            if self._startup_service.enable():
+                self._edit_status_lbl.config(text="✓ Início automático com o Windows ativado", fg="#10b981")
+            else:
+                self._autostart_var.set(False)
+                self._edit_status_lbl.config(text="✗ Falha ao registrar início automático", fg="#ef4444")
+        else:
+            self._startup_service.disable()
+            self._edit_status_lbl.config(text="● Início automático desativado", fg="#64748b")
+
+    def _load_saved_settings(self) -> None:
+        """Restores previously saved user preferences on startup."""
+        try:
+            cfg = self._config_storage.load_config()
+            if cfg.effect_type == "random_blend":
+                self._effect_var.set("✨ Mosaico Aleatório (Random Blend - 100% teclas)")
+            else:
+                self._effect_var.set("🌸 Flores Desabrochando (Blooming)")
+
+            pal = cfg.palette_name.capitalize()
+            if pal in self._palette_cb["values"]:
+                self._palette_var.set(pal)
+
+            self._speed_scale.set(cfg.speed)
+            self._brightness_scale.set(int(cfg.brightness * 100))
+            self._saturation_scale.set(int(cfg.saturation * 100))
+            self._fps_scale.set(int(cfg.fps))
+            self._flowers_scale.set(cfg.max_flowers)
+
+            self._update_speed_label(str(cfg.speed))
+            self._update_brightness_label(str(int(cfg.brightness * 100)))
+            self._update_saturation_label(str(int(cfg.saturation * 100)))
+            self._update_fps_label(str(int(cfg.fps)))
+            self._update_flowers_label(str(cfg.max_flowers))
+            self._on_effect_selected()
+        except Exception:
+            pass
+
+    def _save_current_config(self) -> None:
+        """Saves current settings to user JSON storage."""
+        try:
+            settings = self.get_current_settings()
+            cfg = EffectConfig(
+                effect_type=settings["effect_type"],
+                palette_name=settings["palette"],
+                speed=settings["speed"],
+                brightness=settings["brightness"],
+                saturation=settings["saturation"],
+                fps=settings["fps"],
+                max_flowers=settings.get("max_flowers", 7),
+            )
+            self._config_storage.save_config(cfg, {"driver": settings.get("driver", "auto")})
+        except Exception:
+            pass
 
