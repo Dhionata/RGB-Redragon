@@ -9,7 +9,10 @@ from openrgb_flowers.core.models.effect_config import EffectConfig
 
 @pytest.fixture
 def tk_root():
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except (tk.TclError, RuntimeError) as exc:
+        pytest.skip(f"Tkinter display not available: {exc}")
     root.withdraw()
     yield root
     try:
