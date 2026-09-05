@@ -8,6 +8,7 @@ setup(
     install_requires=[
         "numpy>=1.20.0",
         "openrgb-python>=0.3.5",
+        "hidapi>=0.14.0",
     ],
     extras_require={
         "dev": ["pytest>=7.0.0"],
