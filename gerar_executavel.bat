@@ -6,9 +6,19 @@ echo   Encerrando instancias ativas do executavel (se houver)...
 echo ========================================================
 taskkill /F /IM FlowersBlooming.exe /IM RedragonFlowers.exe /IM OpenRGBFlowers.exe /IM RedragonRGB.exe 2>nul
 echo ========================================================
-echo   Iniciando compilacao nativa em C++ com Nuitka...
+echo   ESCOLHA O FORMATO DE COMPILACAO (Nuitka C++):
 echo ========================================================
-python build_nuitka.py
+echo   [1] Pasta Portatil Standalone (RECOMENDADO: 0 falsos positivos / Sem Static ML)
+echo   [2] Arquivo Unico .exe (Onefile compactado)
+echo.
+set /p MODO="Digite 1 ou 2 [Padrao: 1]: "
+if "%MODO%"=="2" (
+    echo Compilando modo Arquivo Unico (.exe)...
+    python build_nuitka.py
+) else (
+    echo Compilando modo Pasta Portatil Standalone...
+    python build_nuitka.py --standalone
+)
 echo.
 echo ========================================================
 echo   Concluido! Abrindo a pasta dist no Windows Explorer...

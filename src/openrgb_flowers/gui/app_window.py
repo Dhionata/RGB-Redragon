@@ -13,6 +13,7 @@ from openrgb_flowers.hardware.k556_matrix_layout_provider import K556MatrixLayou
 from openrgb_flowers.gui.keyboard_canvas import KeyboardCanvas
 from openrgb_flowers.gui.control_panel import ControlPanel
 from openrgb_flowers.gui.gui_runner import GuiRunner
+from openrgb_flowers.gui.system_tray import SystemTrayManager
 
 logger = logging.getLogger("openrgb_flowers.gui.app")
 
@@ -62,8 +63,17 @@ class MainWindow(tk.Tk):
         self._poll_frame_queue()
         self._render_preview_tick()
 
-        # Window closing handler
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        # System Tray Manager (Windows notification area)
+        self._tray_manager = SystemTrayManager(
+            on_restore=self.restore_window,
+            on_quit=self.quit_application,
+            tooltip="OpenRGB Flowers Blooming",
+        )
+        self._tray_manager.start()
+
+        # Window closing and minimize-to-tray handlers
+        self.bind("<Unmap>", self._on_window_unmap)
+        self.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
     def _build_header(self) -> None:
         header = tk.Frame(self, bg=self.HEADER_BG, padx=16, pady=10)
@@ -252,10 +262,33 @@ class MainWindow(tk.Tk):
         # Immediately re-synchronize preview engine with current UI settings
         self._on_settings_preview_change(self._control_panel.get_current_settings())
 
-    def _on_close(self) -> None:
-        """Graceful window close."""
-        self._runner.stop()
-        self.destroy()
+    def _on_window_unmap(self, event) -> None:
+        """Called when window unmaps. Minimizes to system tray if window was iconified."""
+        if event.widget == self and self.state() == "iconic":
+            self.withdraw()
+            self._tray_manager.start()
+
+    def _on_window_close(self) -> None:
+        """Called when user clicks [X] button. Minimizes to tray to keep RGB effect alive."""
+        self.withdraw()
+        self._tray_manager.start()
+
+    def restore_window(self) -> None:
+        """Thread-safely restores window from system tray."""
+        def _restore():
+            self.deiconify()
+            self.state("normal")
+            self.lift()
+            self.focus_force()
+        self.after(0, _restore)
+
+    def quit_application(self) -> None:
+        """Completely terminates background runner, system tray, and GUI window."""
+        def _quit():
+            self._tray_manager.stop()
+            self._runner.stop()
+            self.destroy()
+        self.after(0, _quit)
 
 
 def launch_gui() -> int:

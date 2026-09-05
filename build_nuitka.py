@@ -50,6 +50,8 @@ class NuitkaBuilder:
             "--windows-console-mode=disable",
             "--enable-plugin=tk-inter",
             "--include-package=openrgb_flowers",
+            "--include-package=pystray",
+            "--include-package=PIL",
             "--include-module=hid",
             "--include-module=openrgb",
             "--company-name=OpenRGB Community",
@@ -83,33 +85,74 @@ class NuitkaBuilder:
             print(f"[Nuitka ERROR] Falha na compilacao com codigo {result.returncode}")
             return result.returncode
 
-        output_file = self.output_dir / self.output_name
-        if output_file.exists():
-            alias_file = self.output_dir / "RedragonFlowers.exe"
-            try:
-                shutil.copyfile(output_file, alias_file)
-                print(f"[Nuitka SUCCESS] Criado alias adicional: {alias_file}")
-            except Exception:
-                pass
+        if self.onefile:
+            output_file = self.output_dir / self.output_name
+            if output_file.exists():
+                alias_file = self.output_dir / "RedragonFlowers.exe"
+                try:
+                    shutil.copyfile(output_file, alias_file)
+                    print(f"[Nuitka SUCCESS] Criado alias adicional: {alias_file}")
+                except Exception:
+                    pass
 
-            # Cleanup temporary build directories to keep dist/ clean
-            for temp_dir in [
-                self.output_dir / "launcher.build",
-                self.output_dir / "launcher.dist",
-                self.output_dir / "launcher.onefile-build",
-            ]:
-                if temp_dir.exists():
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+                # Cleanup temporary build directories to keep dist/ clean
+                for temp_dir in [
+                    self.output_dir / "launcher.build",
+                    self.output_dir / "launcher.dist",
+                    self.output_dir / "launcher.onefile-build",
+                ]:
+                    if temp_dir.exists():
+                        shutil.rmtree(temp_dir, ignore_errors=True)
 
-            print(f"[Nuitka SUCCESS] Executavel C++ gerado com sucesso: {output_file}")
-            return 0
+                print(f"[Nuitka SUCCESS] Executavel Onefile C++ gerado com sucesso: {output_file}")
+                return 0
+        else:
+            raw_dist = self.output_dir / "launcher.dist"
+            portable_dir = self.output_dir / "FlowersBlooming_Portable"
+            if raw_dist.exists():
+                if portable_dir.exists():
+                    shutil.rmtree(portable_dir, ignore_errors=True)
+                raw_dist.rename(portable_dir)
+                # Copy alias
+                alias_exe = portable_dir / "RedragonFlowers.exe"
+                try:
+                    shutil.copyfile(portable_exe, alias_exe)
+                except Exception:
+                    pass
+
+                # Clean up build cache
+                build_cache = self.output_dir / "launcher.build"
+                if build_cache.exists():
+                    shutil.rmtree(build_cache, ignore_errors=True)
+
+                # Generate clean ZIP archive
+                zip_path = shutil.make_archive(
+                    str(self.output_dir / "FlowersBlooming_Portable"),
+                    "zip",
+                    root_dir=str(self.output_dir),
+                    base_dir="FlowersBlooming_Portable",
+                )
+
+                print(f"[Nuitka SUCCESS] Pasta Portatil Standalone gerada com sucesso:")
+                print(f"  -> {portable_dir.resolve()}")
+                print(f"  -> Executavel principal: {portable_exe.resolve()}")
+                print(f"  -> Arquivo compactado para distribuicao: {Path(zip_path).resolve()}")
+                return 0
 
         print("[Nuitka ERROR] Executavel nao encontrado apos compilacao.")
         return 1
 
 
 def main() -> int:
-    builder = NuitkaBuilder()
+    import argparse
+    parser = argparse.ArgumentParser(description="Nuitka C++ Native Builder")
+    parser.add_argument(
+        "--standalone",
+        action="store_true",
+        help="Build standalone directory instead of single compressed onefile (0 Static ML flags)",
+    )
+    args = parser.parse_args()
+    builder = NuitkaBuilder(onefile=not args.standalone)
     return builder.run()
 
 
