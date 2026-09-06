@@ -27,10 +27,10 @@ class NuitkaBuilder:
 
     def build_command(self) -> List[str]:
         """Constructs the Nuitka compilation command line arguments."""
+        runner_script = Path(__file__).resolve().parent / "nuitka_runner.py"
         cmd = [
             sys.executable,
-            "-m",
-            "nuitka",
+            str(runner_script),
             "--assume-yes-for-downloads",
             "--mingw64",
             "--lto=yes",
@@ -96,12 +96,23 @@ class NuitkaBuilder:
                 except Exception:
                     pass
 
-    def run(self) -> int:
-        """Executes compilation, organizes artifacts, and ensures a single executable is produced."""
-        print(f"[Nuitka] Iniciando compilacao nativa C++ para {self.output_name}...")
+    def prepare_build_target(self) -> None:
+        """Prepares dist directory and removes stale target before compilation starts."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
         ProcessManager.terminate_processes([self.output_name, "RedragonFlowers.exe", "OpenRGBFlowers.exe"])
         self.cleanup_mode_conflicts()
+        if self.onefile:
+            old_target = self.output_dir / self.output_name
+            if old_target.exists():
+                try:
+                    old_target.unlink()
+                except Exception:
+                    pass
+
+    def run(self) -> int:
+        """Executes compilation, organizes artifacts, and ensures a single executable is produced."""
+        print(f"[Nuitka] Iniciando compilacao nativa C++ para {self.output_name}...")
+        self.prepare_build_target()
 
         cmd = self.build_command()
         print("[Nuitka] Executando comando de compilacao com GCC / MinGW-w64...")
