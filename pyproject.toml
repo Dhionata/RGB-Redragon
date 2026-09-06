@@ -40,3 +40,7 @@ openrgb-flowers = "openrgb_flowers.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-p no:anyio"
+

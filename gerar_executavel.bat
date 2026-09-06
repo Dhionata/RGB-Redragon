@@ -15,13 +15,30 @@ set /p MODO="Digite 1 ou 2 [Padrao: 1]: "
 if "%MODO%"=="2" (
     echo Compilando modo Arquivo Unico (.exe)...
     python build_nuitka.py
+    if errorlevel 1 (
+        echo.
+        echo [ERRO] A compilacao falhou. Verifique as mensagens de erro acima.
+        pause
+        exit /b 1
+    )
+    echo.
+    echo ========================================================
+    echo   Concluido! Abrindo a pasta dist no Windows Explorer...
+    echo ========================================================
+    explorer.exe "%~dp0dist"
 ) else (
     echo Compilando modo Pasta Portatil Standalone...
     python build_nuitka.py --standalone
+    if errorlevel 1 (
+        echo.
+        echo [ERRO] A compilacao falhou. Verifique as mensagens de erro acima.
+        pause
+        exit /b 1
+    )
+    echo.
+    echo ========================================================
+    echo   Concluido! Abrindo a pasta portatil no Windows Explorer...
+    echo ========================================================
+    explorer.exe "%~dp0dist\FlowersBlooming_Portable"
 )
-echo.
-echo ========================================================
-echo   Concluido! Abrindo a pasta dist no Windows Explorer...
-echo ========================================================
-explorer.exe "%~dp0dist"
 pause

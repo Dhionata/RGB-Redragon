@@ -34,13 +34,14 @@ class NuitkaBuilder:
             "--assume-yes-for-downloads",
             "--mingw64",
             "--lto=yes",
+            "--disable-cache=ccache",
             "--windows-console-mode=attach",
             "--enable-plugin=tk-inter",
             "--include-package=openrgb_flowers",
             "--include-package=pystray",
             "--include-package=PIL",
+            "--include-package=openrgb",
             "--include-module=hid",
-            "--include-module=openrgb",
             "--company-name=OpenRGB Community",
             "--product-name=OpenRGB Flowers Blooming",
             "--file-version=1.0.0.0",
@@ -73,11 +74,34 @@ class NuitkaBuilder:
                 except Exception:
                     pass
 
+    def cleanup_mode_conflicts(self) -> None:
+        """Removes stale artifacts from opposing compilation modes to ensure exactly one binary."""
+        if self.onefile:
+            # When compiling onefile, remove any conflicting standalone portable folder and zip
+            portable_dir = self.output_dir / "FlowersBlooming_Portable"
+            portable_zip = self.output_dir / "FlowersBlooming_Portable.zip"
+            if portable_dir.exists():
+                shutil.rmtree(portable_dir, ignore_errors=True)
+            if portable_zip.exists():
+                try:
+                    portable_zip.unlink()
+                except Exception:
+                    pass
+        else:
+            # When compiling standalone, remove any conflicting root onefile executable in dist
+            root_exe = self.output_dir / self.output_name
+            if root_exe.exists():
+                try:
+                    root_exe.unlink()
+                except Exception:
+                    pass
+
     def run(self) -> int:
         """Executes compilation, organizes artifacts, and ensures a single executable is produced."""
         print(f"[Nuitka] Iniciando compilacao nativa C++ para {self.output_name}...")
         self.output_dir.mkdir(parents=True, exist_ok=True)
         ProcessManager.terminate_processes([self.output_name, "RedragonFlowers.exe", "OpenRGBFlowers.exe"])
+        self.cleanup_mode_conflicts()
 
         cmd = self.build_command()
         print("[Nuitka] Executando comando de compilacao com GCC / MinGW-w64...")
@@ -91,6 +115,7 @@ class NuitkaBuilder:
             output_file = self.output_dir / self.output_name
             if output_file.exists():
                 self._cleanup_unwanted_files(self.output_dir)
+                self.cleanup_mode_conflicts()
 
                 # Cleanup temporary build directories
                 for temp_dir in [
@@ -116,6 +141,7 @@ class NuitkaBuilder:
                 portable_exe = portable_dir / self.output_name
                 self._cleanup_unwanted_files(portable_dir)
                 self._cleanup_unwanted_files(self.output_dir)
+                self.cleanup_mode_conflicts()
 
                 # Clean up build cache directory
                 build_cache = self.output_dir / "launcher.build"
