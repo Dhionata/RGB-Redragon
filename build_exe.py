@@ -78,17 +78,10 @@ def build() -> int:
 
     dist_dir = Path("dist")
     primary_exe = dist_dir / "OpenRGBFlowers.exe"
-    alias_exe = dist_dir / "RedragonRGB.exe"
 
     if primary_exe.exists():
-        try:
-            shutil.copyfile(primary_exe, alias_exe)
-        except Exception:
-            pass
-
-        print(f"\n[SUCCESS] Executáveis gerados com sucesso:")
+        print(f"\n[SUCCESS] Executável único gerado com sucesso:")
         print(f"  -> {primary_exe.resolve()}")
-        print(f"  -> {alias_exe.resolve()}")
         return 0
 
     print("\n[ERROR] Arquivo executável não encontrado após compilação.")
