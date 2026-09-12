@@ -128,8 +128,12 @@ class NuitkaBuilder:
                 self._cleanup_unwanted_files(self.output_dir)
                 self.cleanup_mode_conflicts()
 
+                entry_stem = Path(self.entry_point).stem
                 # Cleanup temporary build directories
                 for temp_dir in [
+                    self.output_dir / f"{entry_stem}.build",
+                    self.output_dir / f"{entry_stem}.dist",
+                    self.output_dir / f"{entry_stem}.onefile-build",
                     self.output_dir / "launcher.build",
                     self.output_dir / "launcher.dist",
                     self.output_dir / "launcher.onefile-build",
@@ -140,7 +144,11 @@ class NuitkaBuilder:
                 print(f"[Nuitka SUCCESS] Executavel unico C++ Onefile gerado: {output_file.resolve()}")
                 return 0
         else:
-            raw_dist = self.output_dir / "launcher.dist"
+            entry_stem = Path(self.entry_point).stem
+            raw_dist = self.output_dir / f"{entry_stem}.dist"
+            if not raw_dist.exists() and (self.output_dir / "launcher.dist").exists():
+                raw_dist = self.output_dir / "launcher.dist"
+
             portable_dir = self.output_dir / "FlowersBlooming_Portable"
 
             if raw_dist.exists():
@@ -155,9 +163,12 @@ class NuitkaBuilder:
                 self.cleanup_mode_conflicts()
 
                 # Clean up build cache directory
-                build_cache = self.output_dir / "launcher.build"
-                if build_cache.exists():
-                    shutil.rmtree(build_cache, ignore_errors=True)
+                for build_cache in [
+                    self.output_dir / f"{entry_stem}.build",
+                    self.output_dir / "launcher.build",
+                ]:
+                    if build_cache.exists():
+                        shutil.rmtree(build_cache, ignore_errors=True)
 
                 # Generate clean ZIP archive
                 zip_path = shutil.make_archive(

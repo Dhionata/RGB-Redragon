@@ -266,3 +266,24 @@ def test_version_reader_multi_section_toml(tmp_path: Path):
         encoding="utf-8"
     )
     assert VersionReader.get_version(tmp_path) == "3.2.1"
+
+
+# ---------------------------------------------------------------------------
+# CI/CD Release Pipeline & Dependency Integrity
+# ---------------------------------------------------------------------------
+def test_release_pipeline_dependencies_integrity():
+    root = Path(__file__).resolve().parent.parent
+    req_dev = (root / "requirements-dev.txt").read_text(encoding="utf-8")
+    assert "nuitka" in req_dev.lower(), "requirements-dev.txt must include nuitka for CI build"
+    assert "pytest" in req_dev.lower(), "requirements-dev.txt must include pytest"
+
+    setup_py = (root / "setup.py").read_text(encoding="utf-8")
+    assert "nuitka" in setup_py.lower(), "setup.py extras_require['dev'] must include nuitka"
+
+    workflow_file = root / ".github" / "workflows" / "release.yml"
+    assert workflow_file.is_file(), "release.yml workflow must exist"
+    wf_text = workflow_file.read_text(encoding="utf-8")
+    assert "branches:" in wf_text and "main" in wf_text, "release.yml must trigger on main branch"
+    assert "v*" in wf_text, "release.yml must trigger on v* tags"
+    assert "pip install -e .[dev]" in wf_text, "release.yml must install dev extras"
+

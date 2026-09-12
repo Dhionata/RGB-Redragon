@@ -13,7 +13,12 @@ setup(
         "pillow>=10.0.0",
     ],
     extras_require={
-        "dev": ["pytest>=7.0.0"],
+        "dev": [
+            "pytest>=7.0.0",
+            "nuitka>=2.0.0",
+            "zstandard>=0.20.0",
+            "ordered-set>=4.1.0",
+        ],
     },
     entry_points={
         "console_scripts": [
