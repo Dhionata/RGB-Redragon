@@ -19,6 +19,7 @@ endif()
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -84,6 +85,9 @@ endif()
 add_executable(FlowersBlooming src/main.cpp ${APP_RESOURCES})
 target_link_libraries(FlowersBlooming PRIVATE flowers_core)
 set_target_properties(FlowersBlooming PROPERTIES OUTPUT_NAME "FlowersBlooming")
+if(MSVC)
+    target_sources(FlowersBlooming PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/app.manifest")
+endif()
 
 # Unit Tests Executable
 set(TEST_SOURCES
@@ -101,6 +105,9 @@ set(TEST_SOURCES
 
 add_executable(tests_cpp ${TEST_SOURCES} ${APP_RESOURCES})
 target_link_libraries(tests_cpp PRIVATE flowers_core)
+if(MSVC)
+    target_sources(tests_cpp PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/app.manifest")
+endif()
 
 # Shared test library to allow execution via ctypes runner in environments blocking untrusted executables
 if(MINGW)
