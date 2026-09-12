@@ -10,19 +10,43 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
-    name: Native C++ Build & Test (Windows)
-    runs-on: windows-latest
+  test:
+    name: Test (${{ matrix.os }} - Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout source code
+        uses: actions/checkout@v7
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
-      - name: Build C++ Binaries
-        run: cmake --build build --config Release --parallel
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk xvfb libhidapi-dev libhidapi-hidraw0
 
-      - name: Run C++ Unit Tests
-        run: ctest --test-dir build --output-on-failure -C Release
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -m pytest tests --verbose
+
+      - name: Run tests (Linux with Xvfb)
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a python -m pytest tests --verbose

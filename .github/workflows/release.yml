@@ -24,51 +24,36 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
           choco install innosetup --no-progress -y
           "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Configure CMake
+      - name: Install Python dependencies
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
+          pip install -e .[dev]
 
-      - name: Build C++ Binaries
+      - name: Run Test Suite
         run: |
-          cmake --build build --config Release --parallel
+          python -m pytest tests --verbose
 
-      - name: Run C++ Unit Tests
+      - name: Compile Standalone with Nuitka (C++)
         run: |
-          ctest --test-dir build --output-on-failure -C Release
-
-      - name: Package Portable Distribution
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist/FlowersBlooming_Portable | Out-Null
-          if (Test-Path build/Release/FlowersBlooming.exe) {
-            Copy-Item build/Release/FlowersBlooming.exe dist/FlowersBlooming_Portable/FlowersBlooming.exe -Force
-            Copy-Item build/Release/FlowersBlooming.exe dist/FlowersBlooming.exe -Force
-          } elseif (Test-Path build/FlowersBlooming.exe) {
-            Copy-Item build/FlowersBlooming.exe dist/FlowersBlooming_Portable/FlowersBlooming.exe -Force
-            Copy-Item build/FlowersBlooming.exe dist/FlowersBlooming.exe -Force
-          } else {
-            throw "FlowersBlooming.exe was not found in build output!"
-          }
-          Copy-Item config.example.json dist/FlowersBlooming_Portable/ -Force
-          Copy-Item README.md dist/FlowersBlooming_Portable/ -Force
-          Compress-Archive -Path "dist/FlowersBlooming_Portable/*" -DestinationPath "dist/FlowersBlooming_Portable.zip" -Force
+          python build_nuitka.py --standalone
 
       - name: Build Inno Setup Installer
-        shell: pwsh
         run: |
-          if (Get-Command iscc.exe -ErrorAction SilentlyContinue) {
-            iscc.exe installer.iss
-          } elseif (Test-Path "C:\Program Files (x86)\Inno Setup 6\iscc.exe") {
-            & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" installer.iss
-          } else {
-            throw "Inno Setup Compiler (ISCC.exe) not found!"
-          }
+          python build_installer.py --skip-nuitka
 
       - name: Check SignPath Credentials
         id: signpath-check
@@ -128,7 +113,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location dist
-          $hashes = Get-FileHash -Algorithm SHA256 FlowersBlooming.exe, FlowersBlooming_Setup.exe, FlowersBlooming_Portable.zip | ForEach-Object {
+          $hashes = Get-FileHash -Algorithm SHA256 FlowersBlooming_Setup.exe, FlowersBlooming_Portable.zip | ForEach-Object {
             "$($_.Hash.ToLower())  $($_.Path | Split-Path -Leaf)"
           }
           $hashes | Out-File -Encoding utf8 SHA256SUMS.txt
@@ -139,7 +124,6 @@ jobs:
         with:
           name: OpenRGB-Flowers-Blooming-Dist
           path: |
-            dist/FlowersBlooming.exe
             dist/FlowersBlooming_Setup.exe
             dist/FlowersBlooming_Portable.zip
             dist/SHA256SUMS.txt
@@ -153,7 +137,6 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            dist/FlowersBlooming.exe
             dist/FlowersBlooming_Setup.exe
             dist/FlowersBlooming_Portable.zip
             dist/SHA256SUMS.txt
