@@ -25,4 +25,8 @@ setup(
             "openrgb-flowers=openrgb_flowers.cli.main:main",
         ],
     },
+    package_data={
+        "openrgb_flowers": ["assets/*"],
+    },
+    include_package_data=True,
 )

@@ -25,8 +25,8 @@ def main(args: Optional[list[str]] = None) -> int:
         datefmt="%H:%M:%S",
     )
 
-    # Auto-default to GUI if running as a standalone frozen executable without CLI arguments
-    if args is None and len(sys.argv) == 1 and getattr(sys, "frozen", False):
+    # Auto-default to GUI if launched without CLI arguments
+    if args is None and len(sys.argv) == 1:
         args = ["--gui"]
 
     parser = ArgumentParserBuilder.build()

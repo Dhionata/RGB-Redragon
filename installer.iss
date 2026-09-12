@@ -63,6 +63,15 @@ UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\assets\icon.ico
 SetupIconFile=assets\icon.ico
 
+; Version info and PE metadata (clean reputation, no generic packer alerts)
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoTextVersion={#MyAppVersion}
+VersionInfoCopyright=Copyright (C) 2026 {#MyAppPublisher}
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+
 ; Compression
 Compression=lzma2/normal
 SolidCompression=yes

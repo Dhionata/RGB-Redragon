@@ -35,11 +35,21 @@ class AssetLocator:
         search_locations.append(exe_dir / "assets" / filename)
         search_locations.append(exe_dir / filename)
 
-        # 3. Source repository root (openrgb_flowers/gui/../../assets/filename)
-        source_root = Path(__file__).resolve().parent.parent.parent
-        search_locations.append(source_root / "assets" / filename)
+        # 3. Package internal assets directory (src/openrgb_flowers/assets/filename)
+        this_file = Path(__file__).resolve()
+        pkg_root = this_file.parent.parent  # src/openrgb_flowers
+        search_locations.append(pkg_root / "assets" / filename)
 
-        # 4. Current working directory
+        # 4. Source repository root (repo_root/assets/filename)
+        if len(this_file.parents) > 3:
+            repo_root = this_file.parents[3]
+            search_locations.append(repo_root / "assets" / filename)
+            search_locations.append(repo_root / filename)
+
+        # 5. Parent src directory
+        search_locations.append(this_file.parent.parent.parent / "assets" / filename)
+
+        # 6. Current working directory
         search_locations.append(Path.cwd() / "assets" / filename)
         search_locations.append(Path.cwd() / filename)
 

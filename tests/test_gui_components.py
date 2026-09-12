@@ -7,7 +7,7 @@ from openrgb_flowers.gui.gui_runner import GuiRunner
 from openrgb_flowers.core.models.effect_config import EffectConfig
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def tk_root():
     try:
         root = tk.Tk()

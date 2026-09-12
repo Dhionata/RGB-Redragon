@@ -45,6 +45,11 @@ class MainWindow(tk.Tk):
         # Layout provider (default to K556 physical matrix)
         self._layout_provider = K556MatrixLayoutProvider()
 
+        # Closing state and periodic job references
+        self._is_closing = False
+        self._poll_job: Optional[str] = None
+        self._preview_job: Optional[str] = None
+
         # Build UI components
         self._build_header()
         self._build_canvas()
@@ -188,7 +193,11 @@ class MainWindow(tk.Tk):
         except Exception as e:
             logger.debug(f"Preview animation tick: {e}")
         finally:
-            self.after(33, self._render_preview_tick)
+            if not self._is_closing:
+                try:
+                    self._preview_job = self.after(33, self._render_preview_tick)
+                except tk.TclError:
+                    self._preview_job = None
 
     def _on_settings_preview_change(self, settings: Dict[str, Any]) -> None:
         """Called instantaneously when any GUI widget is moved while stopped."""
@@ -247,7 +256,11 @@ class MainWindow(tk.Tk):
         except Exception:
             pass
         finally:
-            self.after(20, self._poll_frame_queue)
+            if not self._is_closing:
+                try:
+                    self._poll_job = self.after(20, self._poll_frame_queue)
+                except tk.TclError:
+                    self._poll_job = None
 
     def _set_status_threadsafe(self, text: str, is_active: bool) -> None:
         def _update():
@@ -281,14 +294,15 @@ class MainWindow(tk.Tk):
 
     def _on_window_unmap(self, event) -> None:
         """Called when window unmaps. Minimizes to system tray if window was iconified."""
-        if event.widget == self and self.state() == "iconic":
+        if event.widget == self and self.state() == "iconic" and self._tray_manager.is_running():
             self.withdraw()
-            self._tray_manager.start()
 
     def _on_window_close(self) -> None:
-        """Called when user clicks [X] button. Minimizes to tray to keep RGB effect alive."""
-        self.withdraw()
-        self._tray_manager.start()
+        """Called when user clicks [X] button. Minimizes to tray if tray is active, else quits."""
+        if self._tray_manager.is_running():
+            self.withdraw()
+        else:
+            self.quit_application()
 
     def restore_window(self) -> None:
         """Thread-safely restores window from system tray."""
@@ -301,10 +315,27 @@ class MainWindow(tk.Tk):
 
     def quit_application(self) -> None:
         """Completely terminates background runner, system tray, and GUI window."""
+        self._is_closing = True
+        if self._preview_job:
+            try:
+                self.after_cancel(self._preview_job)
+            except Exception:
+                pass
+            self._preview_job = None
+        if self._poll_job:
+            try:
+                self.after_cancel(self._poll_job)
+            except Exception:
+                pass
+            self._poll_job = None
+
         def _quit():
             self._tray_manager.stop()
             self._runner.stop()
-            self.destroy()
+            try:
+                self.destroy()
+            except Exception:
+                pass
         self.after(0, _quit)
 
 

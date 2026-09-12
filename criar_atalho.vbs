@@ -7,7 +7,8 @@ desktopPath = WshShell.SpecialFolders("Desktop")
 shortcutPath = desktopPath & "\OpenRGB Flowers Blooming.lnk"
 
 Set shortcut = WshShell.CreateShortcut(shortcutPath)
-shortcut.TargetPath = strDir & "\run_gui.vbs"
+shortcut.TargetPath = "wscript.exe"
+shortcut.Arguments = """" & strDir & "\run_gui.vbs"""
 shortcut.WorkingDirectory = strDir
 
 iconPath = strDir & "\assets\icon.ico"
