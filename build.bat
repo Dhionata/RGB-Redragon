@@ -67,11 +67,17 @@ if exist "tests_cpp.exe" (
     .\tests_cpp.exe
     if !ERRORLEVEL! equ 0 set TEST_STATUS=0
 )
+if exist "Release\tests_cpp.exe" (
+    .\Release\tests_cpp.exe
+    if !ERRORLEVEL! equ 0 set TEST_STATUS=0
+)
 
 if !TEST_STATUS! neq 0 (
-    echo [Testes] Executando testes via runner nativo compartilhado run_tests.py...
-    python ..\run_tests.py
-    if !ERRORLEVEL! equ 0 set TEST_STATUS=0
+    if exist "..\run_tests.py" (
+        echo [Testes] Executando testes via runner nativo compartilhado run_tests.py...
+        python ..\run_tests.py
+        if !ERRORLEVEL! equ 0 set TEST_STATUS=0
+    )
 )
 
 cd ..
@@ -83,6 +89,9 @@ if %TEST_STATUS% neq 0 (
     echo ===============================================================================
     exit /b 1
 )
+
+:: 4.5. Copiar executaveis para pasta dist
+powershell -NoProfile -Command "New-Item -ItemType Directory -Force -Path 'dist\FlowersBlooming_Portable' | Out-Null; if (Test-Path 'build\Release\FlowersBlooming.exe') { Copy-Item 'build\Release\FlowersBlooming.exe' 'dist\FlowersBlooming_Portable\FlowersBlooming.exe' -Force; Copy-Item 'build\Release\FlowersBlooming.exe' 'dist\FlowersBlooming.exe' -Force } elseif (Test-Path 'build\FlowersBlooming.exe') { Copy-Item 'build\FlowersBlooming.exe' 'dist\FlowersBlooming_Portable\FlowersBlooming.exe' -Force; Copy-Item 'build\FlowersBlooming.exe' 'dist\FlowersBlooming.exe' -Force }; Copy-Item 'config.example.json' 'dist\FlowersBlooming_Portable\' -Force; Copy-Item 'README.md' 'dist\FlowersBlooming_Portable\' -Force"
 
 :: 5. Empacotar ZIP Portatil
 echo [Packaging] Gerando arquivo ZIP portatil...

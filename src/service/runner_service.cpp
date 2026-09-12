@@ -1,6 +1,7 @@
 #include "openrgb_flowers/service/runner_service.hpp"
 #include "openrgb_flowers/effects/effect_engine_factory.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <csignal>
 #include <iostream>

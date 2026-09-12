@@ -52,14 +52,23 @@ jobs:
           } elseif (Test-Path build/FlowersBlooming.exe) {
             Copy-Item build/FlowersBlooming.exe dist/FlowersBlooming_Portable/FlowersBlooming.exe -Force
             Copy-Item build/FlowersBlooming.exe dist/FlowersBlooming.exe -Force
+          } else {
+            throw "FlowersBlooming.exe was not found in build output!"
           }
           Copy-Item config.example.json dist/FlowersBlooming_Portable/ -Force
           Copy-Item README.md dist/FlowersBlooming_Portable/ -Force
           Compress-Archive -Path "dist/FlowersBlooming_Portable/*" -DestinationPath "dist/FlowersBlooming_Portable.zip" -Force
 
       - name: Build Inno Setup Installer
+        shell: pwsh
         run: |
-          iscc installer.iss
+          if (Get-Command iscc.exe -ErrorAction SilentlyContinue) {
+            iscc.exe installer.iss
+          } elseif (Test-Path "C:\Program Files (x86)\Inno Setup 6\iscc.exe") {
+            & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" installer.iss
+          } else {
+            throw "Inno Setup Compiler (ISCC.exe) not found!"
+          }
 
       - name: Check SignPath Credentials
         id: signpath-check

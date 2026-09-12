@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Compiler optimization and warning flags
 if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/W4 /O2 /permissive- /utf-8)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/W3 /permissive- /utf-8)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 else()
     add_compile_options(-Wall -Wextra -O3 -fno-strict-aliasing)
     # Statically link libgcc and libstdc++ so binary is 100% standalone without external DLLs
@@ -67,7 +67,7 @@ set(LIB_SOURCES
 
 set(PLATFORM_LIBS "")
 if(WIN32)
-    set(PLATFORM_LIBS hid setupapi ws2_32)
+    set(PLATFORM_LIBS hid setupapi ws2_32 shell32 user32 advapi32)
 endif()
 
 # Static library for core logic
@@ -85,7 +85,7 @@ add_executable(FlowersBlooming src/main.cpp ${APP_RESOURCES})
 target_link_libraries(FlowersBlooming PRIVATE flowers_core)
 set_target_properties(FlowersBlooming PROPERTIES OUTPUT_NAME "FlowersBlooming")
 
-# Unit Tests Executable and Shared Library
+# Unit Tests Executable
 set(TEST_SOURCES
     tests/cpp/test_main.cpp
     tests/cpp/test_color_models.cpp
@@ -102,16 +102,18 @@ set(TEST_SOURCES
 add_executable(tests_cpp ${TEST_SOURCES} ${APP_RESOURCES})
 target_link_libraries(tests_cpp PRIVATE flowers_core)
 
-# Shared test library with version resource to allow execution via runner in environments blocking untrusted executables
-add_library(flowers_tests_shared SHARED ${TEST_SOURCES} ${APP_RESOURCES})
-target_link_libraries(flowers_tests_shared PRIVATE flowers_core)
-target_compile_definitions(flowers_tests_shared PRIVATE BUILDING_TESTS_DLL)
+# Shared test library to allow execution via ctypes runner in environments blocking untrusted executables
+if(MINGW)
+    add_library(flowers_tests_shared SHARED ${TEST_SOURCES} ${APP_RESOURCES})
+    target_link_libraries(flowers_tests_shared PRIVATE flowers_core)
+    target_compile_definitions(flowers_tests_shared PRIVATE BUILDING_TESTS_DLL)
+endif()
 
 enable_testing()
 add_test(NAME UnitTests COMMAND tests_cpp)
 
-# Output organization target
-add_custom_target(dist_package ALL
+# Optional packaging target (executed manually or via build scripts)
+add_custom_target(dist_package
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/dist/FlowersBlooming_Portable
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FlowersBlooming> ${CMAKE_CURRENT_SOURCE_DIR}/dist/FlowersBlooming_Portable/FlowersBlooming.exe
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FlowersBlooming> ${CMAKE_CURRENT_SOURCE_DIR}/dist/FlowersBlooming.exe
