@@ -10,3 +10,10 @@ build/
 *.lnk
 .venv/
 env/
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+compile_commands.json
+
