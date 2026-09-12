@@ -52,6 +52,7 @@ LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
             SetForegroundWindow(hwnd);
             int cmd = TrackPopupMenu(hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, hwnd, nullptr);
+            PostMessage(hwnd, WM_NULL, 0, 0);
             DestroyMenu(hMenu);
 
             PostMessage(hwnd, WM_COMMAND, static_cast<WPARAM>(cmd), 0);

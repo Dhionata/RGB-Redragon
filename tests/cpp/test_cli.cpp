@@ -117,3 +117,14 @@ TEST_CASE(CLI, StartupRegistrationFlags) {
     auto p2 = ArgumentParser::parse(args2);
     EXPECT_TRUE(p2.uninstall_startup);
 }
+
+TEST_CASE(CLI, DurationFlag) {
+    std::vector<std::string> args = {"--mock", "--duration", "5", "--fps", "30"};
+    auto p = ArgumentParser::parse(args);
+    EXPECT_TRUE(p.mock);
+    EXPECT_TRUE(p.duration.has_value());
+    EXPECT_NEAR(p.duration.value(), 5.0f, 0.01f);
+    EXPECT_TRUE(p.max_frames.has_value());
+    EXPECT_EQ(p.max_frames.value(), 150);
+}
+

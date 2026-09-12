@@ -31,11 +31,17 @@ bool WindowsStartupService::is_enabled() const {
 
 bool WindowsStartupService::enable(const std::string& extra_args) const {
 #ifdef _WIN32
-    wchar_t exe_path[MAX_PATH];
-    GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
+    std::vector<wchar_t> exe_path(32768, L'\0');
+    DWORD len = GetModuleFileNameW(nullptr, exe_path.data(), static_cast<DWORD>(exe_path.size()));
+    if (len == 0 || len >= exe_path.size()) {
+        return false;
+    }
 
     std::wstring wextra(extra_args.begin(), extra_args.end());
-    std::wstring cmd = L"\"" + std::wstring(exe_path) + L"\" " + wextra;
+    std::wstring cmd = L"\"" + std::wstring(exe_path.data()) + L"\"";
+    if (!wextra.empty()) {
+        cmd += L" " + wextra;
+    }
 
     HKEY key = nullptr;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr) != ERROR_SUCCESS) {

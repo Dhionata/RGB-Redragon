@@ -1,5 +1,7 @@
 #include "openrgb_flowers/cli/argument_parser.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace openrgb_flowers::cli {
@@ -52,6 +54,8 @@ ParsedArguments ArgumentParser::parse(const std::vector<std::string>& args) {
             result.config.device_name = args[++i];
         } else if ((arg == "-c" || arg == "--config") && i + 1 < args.size()) {
             result.config_file = args[++i];
+        } else if (arg == "--duration" && i + 1 < args.size()) {
+            result.duration = std::stof(args[++i]);
         } else if (arg == "--max-frames" && i + 1 < args.size()) {
             result.max_frames = std::stoull(args[++i]);
         } else if (arg == "--tray") {
@@ -64,6 +68,10 @@ ParsedArguments ArgumentParser::parse(const std::vector<std::string>& args) {
         } else if (arg == "--uninstall-startup") {
             result.uninstall_startup = true;
         }
+    }
+
+    if (result.duration.has_value() && !result.max_frames.has_value()) {
+        result.max_frames = static_cast<uint64_t>(std::max(1.0f, std::round(result.duration.value() * result.config.fps)));
     }
 
     return result;
@@ -94,6 +102,8 @@ Opções / Options:
       --port <porta>         Porta TCP do OpenRGB SDK (padrão: 6742).
   -d, --device <nome>        Filtro de nome do dispositivo OpenRGB (ex: 'K556').
   -c, --config <arquivo>     Carrega parâmetros de arquivo JSON.
+      --duration <segundos>  Executa por tempo determinado (em segundos) e encerra.
+      --max-frames <num>     Limite de quadros a renderizar antes de encerrar.
       --tray                 Inicia com ícone na bandeja do sistema (system tray).
       --autostart            Modo silencioso em segundo plano para inicialização.
       --install-startup      Registra execução automática no login do Windows.

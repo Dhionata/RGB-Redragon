@@ -116,8 +116,11 @@ std::pair<float, float> BloomingEngine::generate_flower_position() {
 void BloomingEngine::spawn_flower() {
     auto [cx, cy] = generate_flower_position();
 
-    std::uniform_int_distribution<size_t> petal_dist(0, config_.petal_options.size() - 1);
-    int petal_count = config_.petal_options[petal_dist(rng_)];
+    int petal_count = 5;
+    if (!config_.petal_options.empty()) {
+        std::uniform_int_distribution<size_t> petal_dist(0, config_.petal_options.size() - 1);
+        petal_count = config_.petal_options[petal_dist(rng_)];
+    }
 
     std::uniform_real_distribution<float> rot_dist(0.0f, 2.0f * std::numbers::pi_v<float>);
     float rotation = rot_dist(rng_);

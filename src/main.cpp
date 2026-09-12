@@ -11,6 +11,10 @@
 #include <iostream>
 #include <memory>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace openrgb_flowers;
 
 int main(int argc, char* argv[]) {
@@ -46,6 +50,12 @@ int main(int argc, char* argv[]) {
     service::ConfigStorageService storage_svc;
 
     if (parsed.autostart) {
+#ifdef _WIN32
+        HWND console_hwnd = GetConsoleWindow();
+        if (console_hwnd) {
+            ShowWindow(console_hwnd, SW_HIDE);
+        }
+#endif
         config = storage_svc.load_config();
         std::cout << "[Init] Iniciando em segundo plano via autostart...\n";
     } else if (!parsed.config_file.empty()) {

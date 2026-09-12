@@ -89,3 +89,16 @@ TEST_CASE(Engines, BloomingEngineLifecycleAndPruning) {
         EXPECT_LE(engine.get_active_flower_count(), cfg.max_flowers);
     }
 }
+
+TEST_CASE(Engines, BloomingEngineEmptyPetalsGracefulFallback) {
+    EffectConfig cfg;
+    cfg.petal_options.clear(); // Empty petal options
+    auto layout = std::make_shared<K556MatrixLayoutProvider>();
+    BloomingEngine engine(cfg, layout);
+
+    // Ticking should not crash or throw out-of-bounds error
+    auto frame = engine.tick(0.033f);
+    EXPECT_EQ(frame.led_count, 132);
+    EXPECT_GE(engine.get_active_flower_count(), 1);
+}
+

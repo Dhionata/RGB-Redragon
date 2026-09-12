@@ -20,6 +20,7 @@ struct ParsedArguments {
     bool install_startup{false};
     bool uninstall_startup{false};
     bool show_help{false};
+    std::optional<float> duration;
     std::optional<uint64_t> max_frames;
 };
 
