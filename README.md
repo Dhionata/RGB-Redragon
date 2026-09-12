@@ -39,8 +39,7 @@ Featuring **two exclusive lighting engines**, **8 refined color palettes**, **di
   - *Random Matrix Blend*: **100% of keys remain constantly illuminated**, shifting asynchronously between random palette stops using cubic Hermite (*smoothstep*) interpolation.
 - **Interactive GUI with Live 2D Layout Preview**: Animated canvas displaying the physical keyboard matrix in real time before and during execution.
 - **Hot-Reload Controls ("✓ Apply" and "⟲ Undo")**: Modify palette, speed, brightness, saturation, and effect types on the fly without interrupting USB transmission.
-- **Windows Auto-Start on Boot**: Keeps keyboard lighting active after rebooting the computer, preventing the keyboard from reverting to its static hardware firmware default.
-- **Standalone Executable (`RedragonRGB.exe`)**: Can be launched with a simple double-click without ever opening PowerShell or a terminal.
+- **Native Windows Installer & Portable Binary (`FlowersBlooming_Setup.exe` / `FlowersBlooming.exe`)**: Zero-dependency standalone C++ compilation via Nuitka with an automated Inno Setup installer, desktop shortcuts, and auto-start.
 
 ---
 
@@ -123,29 +122,41 @@ python -m openrgb_flowers --gui
 
 ---
 
-## 📦 Standalone Executable (.exe) & Running Without PowerShell
+## 📦 Windows Installer, Standalone Executable & Launchers
 
 You don't need to open PowerShell or type commands to use the application every day.
 
-### Option 1: Standalone Executable (`RedragonRGB.exe`)
-Build a standalone executable using PyInstaller:
+### Option 1: Professional Windows Installer (`FlowersBlooming_Setup.exe`)
+Download the pre-compiled installer from GitHub Releases or compile it locally with Inno Setup:
 
 ```bash
-python build_exe.py
+gerar_instalador.bat
+# Or via Python:
+python build_installer.py --compile-nuitka
 ```
 
-The compiled program is generated in:
+- **Clean Installation**: Installs to `{localappdata}\Programs\OpenRGB Flowers` without requiring Administrator privileges.
+- **Desktop & Start Menu**: Creates desktop and Start Menu shortcuts automatically.
+- **Windows Integration**: Proper uninstaller in Windows Settings / Control Panel.
+
+### Option 2: Portable Standalone (`FlowersBlooming_Portable/`)
+Zero-installation portable bundle generated via Nuitka C++ compilation:
+
+```bash
+gerar_executavel.bat
+# Or via Python:
+python build_nuitka.py --standalone
+```
+
+The portable folder and zip are generated in:
 ```text
-dist/RedragonRGB/RedragonRGB.exe
+dist/FlowersBlooming_Portable/FlowersBlooming.exe
+dist/FlowersBlooming_Portable.zip
 ```
 
-- **Double-Click**: Directly opens the GUI in clean windowed mode without any black console window.
-- **Portability**: Create a desktop shortcut or pin it to your Windows Start Menu.
-
-### Option 2: 1-Click Silent Launchers
-The project includes two lightweight scripts in the root directory:
-- [`run_gui.vbs`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.vbs): Silently launches the GUI via `pythonw.exe` without opening a terminal window.
-- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Standard batch script launcher.
+### Option 3: Developer 1-Click Launcher
+For development from source, run:
+- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Quick batch launcher via `pythonw.exe`.
 
 ---
 
@@ -157,7 +168,7 @@ To keep your lighting effects continuously running after reboots:
 
 ### How to Enable:
 1. **Via the Graphical Interface**:
-   - Open the GUI (`RedragonRGB.exe` or `python -m openrgb_flowers --gui`).
+   - Open the GUI (`FlowersBlooming.exe` or `python -m openrgb_flowers --gui`).
    - Check the box: **`[x] Iniciar com o Windows`** (Start with Windows).
 2. **Via Command Line**:
    ```bash
@@ -348,16 +359,25 @@ openrgb_flowers_blooming/
 │       ├── math/                    # Vectorized color math and interpolation
 │       ├── preview/                 # Terminal TrueColor live visualizer
 │       └── service/                 # Loop runners, Windows startup, and config persistence
-├── tests/                           # 64 automated unit and integration tests with pytest
-├── build_nuitka.py                  # Native C++ compiler with Nuitka (Standalone & Onefile)
-├── build_exe.py                     # Legacy PyInstaller compiler
-├── gerar_executavel.bat             # 1-click interactive build menu
+├── tests/                           # 91 automated unit and integration tests with pytest
+├── build_tools/                     # Modular build system (SOLID & DRY)
+│   ├── inno_builder.py              # Inno Setup compilation orchestrator
+│   ├── inno_locator.py              # Inno Setup compiler detection
+│   ├── nuitka_builder.py            # Nuitka C++ native builder
+│   ├── nuitka_runner.py             # Resilient compiler execution with lock retries
+│   ├── process_manager.py           # Safe process termination
+│   └── version_reader.py            # Version extraction from pyproject.toml
+├── build_installer.py               # CLI entrypoint for Inno Setup installer
+├── build_nuitka.py                  # Standalone C++ compiler entrypoint
+├── gerar_instalador.bat             # 1-click installer creation script
+├── gerar_executavel.bat             # 1-click standalone compilation script
+├── installer.iss                    # Inno Setup installation script
 ├── launcher.py                      # Application launcher entry point
-├── run_gui.vbs                      # 1-click silent VBScript launcher
 ├── run_gui.bat                      # 1-click batch launcher
 ├── requirements.txt                 # Production dependencies
 ├── requirements-dev.txt             # Development and test dependencies
 ├── pyproject.toml                   # Packaging configuration
+├── setup.py                         # Secondary setuptools distribution config
 ├── README.md                        # English documentation
 └── README_PTBR.md                   # Brazilian Portuguese documentation
 ```
@@ -366,7 +386,7 @@ openrgb_flowers_blooming/
 
 ## 🧪 Automated Tests & CI
 
-The repository includes **64 automated tests** verifying mathematical models, interpolation, hardware packet formatting, layout geometry, interfaces, and GUI behavior:
+The repository includes **91 automated tests** verifying mathematical models, interpolation, hardware packet formatting, layout geometry, interfaces, and GUI behavior:
 
 ```bash
 python -m pytest tests -v

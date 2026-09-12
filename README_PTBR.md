@@ -39,8 +39,7 @@ O projeto conta com **dois motores de iluminação exclusivos**, **8 paletas de 
   - *Mosaico Aleatório*: **100% das teclas permanecem acesas simultaneamente**, alternando continuamente entre cores com interpolação cúbica Hermite (*smoothstep*).
 - **Interface Gráfica com Preview Vivo**: Teclado virtual em 2D que renderiza a física do efeito antes e durante a execução.
 - **Controle a Quente ("✓ Aplicar" e "⟲ Desfazer")**: Permite trocar paleta, saturação, brilho e velocidade em tempo real sem travar ou interromper a transmissão USB.
-- **Persistência e Início Automático no Windows**: Opção de iniciar automaticamente no boot do Windows em segundo plano, mantendo o efeito ativo sem que o teclado retorne ao padrão estático da placa após reiniciar o computador.
-- **Executável Único (`RedragonRGB.exe`)**: Pode ser aberto diretamente com duplo clique no Windows sem precisar de terminal ou PowerShell.
+- **Instalador Nativo e Binário Portátil (`FlowersBlooming_Setup.exe` / `FlowersBlooming.exe`)**: Compilação C++ nativa via Nuitka sem dependência de Python instalado, com instalador Inno Setup completo, atalhos na Área de Trabalho e inicialização com o Windows.
 
 ---
 
@@ -123,29 +122,41 @@ python -m openrgb_flowers --gui
 
 ---
 
-## 📦 Executável Standalone (.exe) e Execução Sem PowerShell
+## 📦 Instalador Windows, Executável Standalone e Atalhos
 
 Você não precisa abrir o PowerShell ou digitar comandos para usar a aplicação no dia a dia.
 
-### Opção 1: Executável Standalone Compilado (`RedragonRGB.exe`)
-Gere um arquivo executável único para Windows com o PyInstaller:
+### Opção 1: Instalador Profissional Windows (`FlowersBlooming_Setup.exe`)
+Baixe o instalador compilado nas Releases do GitHub ou gere localmente com o Inno Setup:
 
 ```bash
-python build_exe.py
+gerar_instalador.bat
+# Ou via Python:
+python build_installer.py --compile-nuitka
 ```
 
-O arquivo compilado será gerado em:
+- **Instalação Limpa**: Instala em `{localappdata}\Programs\OpenRGB Flowers` sem precisar de privilégios de Administrador.
+- **Área de Trabalho e Menu Iniciar**: Cria atalhos de forma nativa e automática.
+- **Integração Completa**: Desinstalador oficial integrado às Configurações e Painel de Controle do Windows.
+
+### Opção 2: Pasta Portátil Standalone (`FlowersBlooming_Portable/`)
+Pacote portátil de zero instalação gerado via compilação C++ nativa com Nuitka:
+
+```bash
+gerar_executavel.bat
+# Ou via Python:
+python build_nuitka.py --standalone
+```
+
+A pasta portátil e o arquivo `.zip` correspondente ficam em:
 ```text
-dist/RedragonRGB.exe
+dist/FlowersBlooming_Portable/FlowersBlooming.exe
+dist/FlowersBlooming_Portable.zip
 ```
 
-- **Duplo Clique**: Abre diretamente a interface gráfica em modo de janela limpa (sem janela preta de terminal).
-- **Portabilidade**: Pode ser colocado na Área de Trabalho, Menu Iniciar ou qualquer pasta.
-
-### Opção 2: Inicializadores Silenciosos em 1 Clique
-No diretório do projeto, fornecemos dois inicializadores rápidos:
-- [`run_gui.vbs`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.vbs): Executa via `pythonw.exe` de forma 100% invisível sem abrir console.
-- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Script batch simples para início imediato.
+### Opção 3: Inicializador para Desenvolvedores em 1 Clique
+Para execução direta a partir do código-fonte Python:
+- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Script batch rápido para execução via `pythonw.exe`.
 
 ---
 
@@ -157,7 +168,7 @@ Para manter seus efeitos sempre ativos automaticamente sem esforço:
 
 ### Como Ativar:
 1. **Pela Interface Gráfica**:
-   - Abra a interface (`RedragonRGB.exe` ou `python -m openrgb_flowers --gui`).
+   - Abra a interface (`FlowersBlooming.exe` ou `python -m openrgb_flowers --gui`).
    - Marque a caixa de seleção: **`[x] Iniciar com o Windows`**.
 2. **Pelo Terminal**:
    ```bash
@@ -348,16 +359,25 @@ openrgb_flowers_blooming/
 │       ├── math/                    # Matemática rápida e interpolações vetorizadas
 │       ├── preview/                 # Visualizador TrueColor no terminal
 │       └── service/                 # Serviços de loop, inicialização no Windows e persistência
-├── tests/                           # 64 testes automatizados com pytest
-├── build_nuitka.py                  # Compilador nativo C++ com Nuitka (Standalone & Onefile)
-├── build_exe.py                     # Compilador PyInstaller legado
-├── gerar_executavel.bat             # Menu interativo para gerar executáveis em 1 clique
+├── tests/                           # 91 testes automatizados com pytest
+├── build_tools/                     # Sistema de compilação modular (SOLID & DRY)
+│   ├── inno_builder.py              # Orquestrador de compilação do Inno Setup
+│   ├── inno_locator.py              # Detecção automática do compilador ISCC.exe
+│   ├── nuitka_builder.py            # Compilador nativo C++ com Nuitka
+│   ├── nuitka_runner.py             # Execução resiliente com retentativas de trava de arquivos
+│   ├── process_manager.py           # Encerramento seguro de processos concorrentes
+│   └── version_reader.py            # Extração de versão do pyproject.toml
+├── build_installer.py               # Ponto de entrada CLI para instalador Inno Setup
+├── build_nuitka.py                  # Ponto de entrada para compilação C++ Nuitka
+├── gerar_instalador.bat             # Script em 1 clique para gerar instalador
+├── gerar_executavel.bat             # Script em 1 clique para compilar executável standalone
+├── installer.iss                    # Script do instalador Inno Setup
 ├── launcher.py                      # Ponto de entrada para os executáveis
-├── run_gui.vbs                      # Inicializador silencioso em 1 clique (VBScript)
 ├── run_gui.bat                      # Inicializador em lote (Batch)
 ├── requirements.txt                 # Dependências de produção
 ├── requirements-dev.txt             # Dependências de desenvolvimento e testes
 ├── pyproject.toml                   # Manifesto de empacotamento moderno
+├── setup.py                         # Configuração secundária de distribuição setuptools
 ├── README.md                        # Documentação em Inglês
 └── README_PTBR.md                   # Documentação em Português do Brasil
 ```
@@ -366,7 +386,7 @@ openrgb_flowers_blooming/
 
 ## 🧪 Testes Automatizados
 
-O projeto conta com **64 testes automatizados** cobrindo matemática, interpolações, layouts de hardware, transmissão USB, interfaces, bandeja do sistema e componentes de GUI:
+O projeto conta com **91 testes automatizados** cobrindo matemática, interpolações, layouts de hardware, transmissão USB, interfaces, bandeja do sistema e componentes de GUI:
 
 ```bash
 python -m pytest tests -v

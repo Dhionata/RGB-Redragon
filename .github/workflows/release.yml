@@ -1,0 +1,140 @@
+name: Release and Code Signing
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+
+jobs:
+  build-and-sign:
+    name: Build & Sign Windows Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run Test Suite
+        run: |
+          python -m pytest tests --verbose
+
+      - name: Compile Standalone with Nuitka (C++)
+        run: |
+          python build_nuitka.py --standalone
+
+      - name: Build Inno Setup Installer
+        run: |
+          python build_installer.py --skip-nuitka
+
+      - name: Check SignPath Credentials
+        id: signpath-check
+        shell: bash
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+        run: |
+          if [ -n "$SIGNPATH_API_TOKEN" ] && [ -n "$SIGNPATH_ORGANIZATION_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "project_slug=${SIGNPATH_PROJECT_SLUG:-openrgb-flowers-blooming}" >> "$GITHUB_OUTPUT"
+            echo "policy_slug=${SIGNPATH_SIGNING_POLICY_SLUG:-release-signing}" >> "$GITHUB_OUTPUT"
+            echo "SignPath credentials detected. Code signing is ENABLED."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SignPath credentials (SIGNPATH_API_TOKEN / SIGNPATH_ORGANIZATION_ID) not configured. Proceeding with unsigned installer."
+          fi
+
+      - name: Upload Unsigned Installer for SignPath
+        if: steps.signpath-check.outputs.configured == 'true'
+        id: upload-unsigned-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: dist/FlowersBlooming_Setup.exe
+          if-no-files-found: error
+
+      - name: Submit Signing Request to SignPath Foundation
+        if: steps.signpath-check.outputs.configured == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ steps.signpath-check.outputs.project_slug }}
+          signing-policy-slug: ${{ steps.signpath-check.outputs.policy_slug }}
+          github-artifact-id: ${{ steps.upload-unsigned-installer.outputs.artifact-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-for-completion: true
+          output-artifact-directory: 'dist/signed'
+
+      - name: Replace Installer with Signed Binary
+        if: steps.signpath-check.outputs.configured == 'true'
+        shell: pwsh
+        run: |
+          $signedExe = Get-ChildItem -Path "dist/signed" -Filter "*.exe" -Recurse | Select-Object -First 1
+          if ($signedExe) {
+            Write-Host "Found signed binary: $($signedExe.FullName)"
+            Copy-Item -Path $signedExe.FullName -Destination "dist/FlowersBlooming_Setup.exe" -Force
+            Write-Host "Successfully replaced dist/FlowersBlooming_Setup.exe with signed binary."
+          } else {
+            throw "Signed binary was not found in dist/signed directory."
+          }
+
+      - name: Generate Checksums (SHA-256)
+        shell: pwsh
+        run: |
+          Set-Location dist
+          $hashes = Get-FileHash -Algorithm SHA256 FlowersBlooming_Setup.exe, FlowersBlooming_Portable.zip | ForEach-Object {
+            "$($_.Hash.ToLower())  $($_.Path | Split-Path -Leaf)"
+          }
+          $hashes | Out-File -Encoding utf8 SHA256SUMS.txt
+          Get-Content SHA256SUMS.txt
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenRGB-Flowers-Blooming-Dist
+          path: |
+            dist/FlowersBlooming_Setup.exe
+            dist/FlowersBlooming_Portable.zip
+            dist/SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: OpenRGB Flowers Blooming ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/FlowersBlooming_Setup.exe
+            dist/FlowersBlooming_Portable.zip
+            dist/SHA256SUMS.txt
