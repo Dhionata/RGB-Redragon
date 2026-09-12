@@ -19,11 +19,15 @@ class NuitkaBuilder:
         output_name: str = "FlowersBlooming.exe",
         output_dir: str = "dist",
         onefile: bool = False,
+        console_mode: str = "attach",
+        icon_path: Optional[str] = None,
     ) -> None:
         self.entry_point = entry_point
         self.output_name = output_name
         self.output_dir = Path(output_dir)
         self.onefile = onefile
+        self.console_mode = console_mode
+        self.icon_path = icon_path
 
     def build_command(self) -> List[str]:
         """Constructs the Nuitka compilation command line arguments."""
@@ -35,7 +39,7 @@ class NuitkaBuilder:
             "--mingw64",
             "--lto=yes",
             "--disable-cache=ccache",
-            "--windows-console-mode=attach",
+            f"--windows-console-mode={self.console_mode}",
             "--enable-plugin=tk-inter",
             "--include-package=openrgb_flowers",
             "--include-package=pystray",
@@ -46,11 +50,23 @@ class NuitkaBuilder:
             "--product-name=OpenRGB Flowers Blooming",
             "--file-version=1.0.0.0",
             "--product-version=1.0.0.0",
-            "--file-description=OpenRGB Flowers Blooming & Redragon RGB Controller (C++ Native)",
+            "--file-description=OpenRGB Flowers Blooming & Redragon RGB Controller",
             "--copyright=Copyright (C) 2026 OpenRGB Community Contributors",
             f"--output-dir={self.output_dir}",
             f"--output-filename={self.output_name}",
         ]
+
+        # Resolve and embed official application icon
+        icon_candidate = None
+        if self.icon_path and Path(self.icon_path).is_file():
+            icon_candidate = Path(self.icon_path).resolve()
+        else:
+            default_ico = Path(__file__).resolve().parent.parent / "assets" / "icon.ico"
+            if default_ico.is_file():
+                icon_candidate = default_ico.resolve()
+
+        if icon_candidate:
+            cmd.append(f"--windows-icon-from-ico={icon_candidate}")
 
         if self.onefile:
             cmd.append("--onefile")
@@ -158,6 +174,11 @@ class NuitkaBuilder:
 
             if portable_dir.exists():
                 portable_exe = portable_dir / self.output_name
+                # Ensure application assets (icons, etc.) are bundled in portable distribution
+                assets_src = Path(__file__).resolve().parent.parent / "assets"
+                if assets_src.is_dir():
+                    shutil.copytree(assets_src, portable_dir / "assets", dirs_exist_ok=True)
+
                 self._cleanup_unwanted_files(portable_dir)
                 self._cleanup_unwanted_files(self.output_dir)
                 self.cleanup_mode_conflicts()

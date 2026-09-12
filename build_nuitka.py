@@ -20,8 +20,24 @@ def main() -> int:
         action="store_true",
         help="Build standalone directory instead of single compressed onefile (0 Static ML flags)",
     )
+    parser.add_argument(
+        "--console-mode",
+        choices=["disable", "attach", "force"],
+        default="disable",
+        help="Windows console mode (default: disable for silent GUI execution without cmd window)",
+    )
+    parser.add_argument(
+        "--icon",
+        type=str,
+        default=None,
+        help="Path to .ico file for executable icon (default: assets/icon.ico)",
+    )
     args = parser.parse_args()
-    builder = NuitkaBuilder(onefile=not args.standalone)
+    builder = NuitkaBuilder(
+        onefile=not args.standalone,
+        console_mode=args.console_mode,
+        icon_path=args.icon,
+    )
     return builder.run()
 
 

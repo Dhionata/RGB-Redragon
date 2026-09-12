@@ -14,6 +14,7 @@ from openrgb_flowers.gui.keyboard_canvas import KeyboardCanvas
 from openrgb_flowers.gui.control_panel import ControlPanel
 from openrgb_flowers.gui.gui_runner import GuiRunner
 from openrgb_flowers.gui.system_tray import SystemTrayManager
+from openrgb_flowers.gui.asset_locator import AssetLocator
 
 logger = logging.getLogger("openrgb_flowers.gui.app")
 
@@ -34,6 +35,9 @@ class MainWindow(tk.Tk):
         self.geometry("900x620")
         self.minsize(860, 580)
         self.configure(bg=self.THEME_BG)
+
+        # Set application icon
+        self._apply_window_icon()
 
         # Thread-safe frame queue
         self._frame_queue: queue.Queue[RenderFrame] = queue.Queue(maxsize=4)
@@ -74,6 +78,19 @@ class MainWindow(tk.Tk):
         # Window closing and minimize-to-tray handlers
         self.bind("<Unmap>", self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_window_close)
+
+    def _apply_window_icon(self) -> None:
+        """Sets the application window icon using the official floral/RGB icon assets."""
+        try:
+            ico_path = AssetLocator.get_icon_ico_path()
+            if ico_path and ico_path.is_file():
+                self.iconbitmap(str(ico_path))
+            png_path = AssetLocator.get_icon_png_path()
+            if png_path and png_path.is_file():
+                self._icon_photo = tk.PhotoImage(file=str(png_path))
+                self.iconphoto(True, self._icon_photo)
+        except Exception as e:
+            logger.debug(f"Could not load custom window icon: {e}")
 
     def _build_header(self) -> None:
         header = tk.Frame(self, bg=self.HEADER_BG, padx=16, pady=10)

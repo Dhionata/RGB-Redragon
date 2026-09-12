@@ -88,6 +88,28 @@ class SystemTrayManager:
         )
         return img
 
+    @classmethod
+    def get_tray_image(cls, size: int = 64) -> Image.Image:
+        """Loads the official project icon if available, with graceful procedural fallback."""
+        from openrgb_flowers.gui.asset_locator import AssetLocator
+        png_path = AssetLocator.get_icon_png_path()
+        if png_path and png_path.is_file():
+            try:
+                img = Image.open(png_path)
+                return img.resize((size, size), Image.Resampling.LANCZOS)
+            except Exception as e:
+                logger.debug(f"Failed to load icon from {png_path}: {e}")
+
+        ico_path = AssetLocator.get_icon_ico_path()
+        if ico_path and ico_path.is_file():
+            try:
+                img = Image.open(ico_path)
+                return img.resize((size, size), Image.Resampling.LANCZOS)
+            except Exception as e:
+                logger.debug(f"Failed to load icon from {ico_path}: {e}")
+
+        return cls.create_tray_image(size=size)
+
     def start(self) -> None:
         """Starts the tray icon in a dedicated daemon thread."""
         if not PYSTRAY_AVAILABLE:
@@ -98,7 +120,7 @@ class SystemTrayManager:
             return
 
         try:
-            image = self.create_tray_image()
+            image = self.get_tray_image()
             menu = pystray.Menu(
                 pystray.MenuItem("🌸 Abrir Painel", self._handle_restore, default=True),
                 pystray.Menu.SEPARATOR,

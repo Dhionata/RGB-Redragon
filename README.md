@@ -154,9 +154,11 @@ dist/FlowersBlooming_Portable/FlowersBlooming.exe
 dist/FlowersBlooming_Portable.zip
 ```
 
-### Option 3: Developer 1-Click Launcher
-For development from source, run:
-- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Quick batch launcher via `pythonw.exe`.
+### Option 3: Silent 1-Click Execution (Zero Console Window)
+For day-to-day execution directly from Python source:
+- **[`run_gui.vbs`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/run_gui.vbs)**: 100% silent VBScript launcher that opens the GUI dashboard via `pythonw.exe` **without ever opening or keeping any black cmd/terminal window**.
+- **[`run_gui.bat`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/run_gui.bat)**: Batch script running detached via `pythonw.exe` and instantly closing the console.
+- **[`criar_atalho.vbs`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/criar_atalho.vbs)**: Automatically creates a clean Desktop shortcut configured with the official project floral/RGB icon (`assets/icon.ico`).
 
 ---
 

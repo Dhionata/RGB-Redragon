@@ -92,6 +92,7 @@ def main() -> int:
             output_name="FlowersBlooming.exe",
             output_dir=str(PROJECT_ROOT / "dist"),
             onefile=False,
+            console_mode="disable",
         )
         ret = nuitka_builder.run()
         if ret != 0:

@@ -1,5 +1,5 @@
 @echo off
-title Criador de Instalador Inno Setup - OpenRGB Flowers
+title Criador de Instalador Inno Setup - OpenRGB Flowers GUI
 cd /d "%~dp0"
 
 echo ========================================================
@@ -10,9 +10,9 @@ taskkill /F /IM FlowersBlooming.exe /IM FlowersBlooming_Setup.exe /IM RedragonFl
 echo.
 echo ========================================================
 echo   CRIADOR DE INSTALADOR PROFISSIONAL (Inno Setup)
-echo   OpenRGB Flowers Blooming
+echo   OpenRGB Flowers Blooming (GUI, Icones e Sem Console)
 echo ========================================================
-echo   [1] Compilar Standalone com Nuitka C++ e Gerar Instalador (Completo)
+echo   [1] Compilar Standalone com Nuitka e Gerar Instalador (Completo)
 echo   [2] Gerar Instalador a partir do Standalone existente em dist/
 echo.
 set MODO=1

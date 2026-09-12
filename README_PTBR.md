@@ -154,9 +154,11 @@ dist/FlowersBlooming_Portable/FlowersBlooming.exe
 dist/FlowersBlooming_Portable.zip
 ```
 
-### Opção 3: Inicializador para Desenvolvedores em 1 Clique
-Para execução direta a partir do código-fonte Python:
-- [`run_gui.bat`](file:///C:/Users/xiyun/Documents/openrgb_flowers_blooming/run_gui.bat): Script batch rápido para execução via `pythonw.exe`.
+### Opção 3: Execução Silenciosa em 1 Clique (Zero Janela de Terminal)
+Para uso diário e desenvolvimento direto a partir do código-fonte Python:
+- **[`run_gui.vbs`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/run_gui.vbs)**: Inicializador VBScript 100% silencioso que inicia o painel gráfico via `pythonw.exe` **sem abrir ou manter nenhuma janela preta de console/CMD**.
+- **[`run_gui.bat`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/run_gui.bat)**: Script batch que inicia o aplicativo em segundo plano e fecha o CMD imediatamente.
+- **[`criar_atalho.vbs`](file:///C:/Users/xiyun/Documents/Projetos/Python/openrgb_flowers_blooming/criar_atalho.vbs)**: Cria na sua Área de Trabalho o atalho oficial do aplicativo configurado com o ícone oficial floral/RGB (`assets/icon.ico`).
 
 ---
 
