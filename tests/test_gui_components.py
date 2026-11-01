@@ -96,3 +96,46 @@ def test_gui_runner_update_config():
     with runner._lock:
         assert runner._pending_config == cfg
         assert runner._pending_effect_name == "random_blend"
+
+
+def test_keyboard_canvas_short_labels():
+    from openrgb_flowers.gui.keyboard_canvas import KeyboardCanvas
+
+    # Numpad specific keys
+    assert KeyboardCanvas._short_label("NumLock") == "NLK"
+    assert KeyboardCanvas._short_label("NumSlash") == "/"
+    assert KeyboardCanvas._short_label("NumAsterisk") == "*"
+    assert KeyboardCanvas._short_label("NumMinus") == "-"
+    assert KeyboardCanvas._short_label("NumPlus") == "+"
+    assert KeyboardCanvas._short_label("NumEnter") == "ENT"
+    assert KeyboardCanvas._short_label("NumPeriod") == "."
+    assert KeyboardCanvas._short_label("Num0") == "0"
+    assert KeyboardCanvas._short_label("Num5") == "5"
+    assert KeyboardCanvas._short_label("Num9") == "9"
+
+    # Arrow keys
+    assert KeyboardCanvas._short_label("UpArrow") == "▲"
+    assert KeyboardCanvas._short_label("DownArrow") == "▼"
+    assert KeyboardCanvas._short_label("LeftArrow") == "◄"
+    assert KeyboardCanvas._short_label("RightArrow") == "►"
+
+    # Function and modifier keys
+    assert KeyboardCanvas._short_label("Escape") == "ESC"
+    assert KeyboardCanvas._short_label("Backspace") == "BKSP"
+    assert KeyboardCanvas._short_label("F1") == "F1"
+    assert KeyboardCanvas._short_label("F12") == "F12"
+
+
+def test_control_panel_fps_up_to_120(tk_root):
+    panel = ControlPanel(
+        tk_root,
+        on_start=lambda s: None,
+        on_stop=lambda: None,
+        load_saved=False,
+    )
+    panel._fps_scale.set(120)
+    panel._update_fps_label("120")
+    settings = panel.get_current_settings()
+    assert settings["fps"] == 120.0
+    assert "120" in panel._fps_label.cget("text")
+

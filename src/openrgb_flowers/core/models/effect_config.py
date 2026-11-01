@@ -19,8 +19,8 @@ class EffectConfig:
     petal_options: List[int] = field(default_factory=lambda: [4, 5, 6, 8])
     palette_name: str = "sakura"
     blend_mode: str = "weighted"
-    background_color: ColorRGB = field(default_factory=lambda: ColorRGB(4, 8, 12))
-    ambient_pulse: bool = True
+    background_color: ColorRGB = field(default_factory=lambda: ColorRGB(0, 0, 0))
+    ambient_pulse: bool = False
     brightness: float = 1.0
     saturation: float = 1.0
     gamma: float = 1.0
@@ -31,8 +31,8 @@ class EffectConfig:
 
     def validate(self) -> None:
         """Validates configuration parameters."""
-        if not (1.0 <= self.fps <= 120.0):
-            raise ConfigurationError(f"fps must be between 1.0 and 120.0, got {self.fps}")
+        if not (1.0 <= self.fps <= 144.0):
+            raise ConfigurationError(f"fps must be between 1.0 and 144.0, got {self.fps}")
         if not (0.1 <= self.speed <= 10.0):
             raise ConfigurationError(f"speed must be between 0.1 and 10.0, got {self.speed}")
         if not (1 <= self.max_flowers <= 50):
@@ -73,7 +73,7 @@ class EffectConfig:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> EffectConfig:
         """Loads config from dictionary."""
-        bg_val = data.get("background_color", "#04080C")
+        bg_val = data.get("background_color", "#000000")
         bg_rgb = ColorRGB.from_hex(bg_val) if isinstance(bg_val, str) else ColorRGB(*bg_val)
         cfg = cls(
             effect_type=str(data.get("effect_type", "blooming")),
@@ -85,7 +85,7 @@ class EffectConfig:
             palette_name=str(data.get("palette_name", "sakura")),
             blend_mode=str(data.get("blend_mode", "weighted")),
             background_color=bg_rgb,
-            ambient_pulse=bool(data.get("ambient_pulse", True)),
+            ambient_pulse=bool(data.get("ambient_pulse", False)),
             brightness=float(data.get("brightness", 1.0)),
             saturation=float(data.get("saturation", 1.0)),
             gamma=float(data.get("gamma", 1.0)),

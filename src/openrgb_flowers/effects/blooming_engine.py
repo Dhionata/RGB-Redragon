@@ -168,11 +168,15 @@ class BloomingEngine(IEffectEngine):
         self._flowers.append(flower)
 
     def _compute_ambient_background(self) -> np.ndarray:
-        """Calculates subtle gentle meadow ambient wave under keys."""
+        """Calculates ambient background under keys. Keeps keys completely off when background is black."""
         if not self._config.ambient_pulse:
             return self._bg_base.copy()
 
-        # Slow breathing botanical breeze across keys
+        # If background is black (0,0,0), keep keys completely off without any bluish tint
+        if self._config.background_color.r == 0 and self._config.background_color.g == 0 and self._config.background_color.b == 0:
+            return self._bg_base.copy()
+
+        # Slow breathing botanical breeze across keys only if explicitly enabled with non-black color
         phase = self._sim_time * 0.8
         wave = (np.sin(self._x_coords * 3.0 + phase) * 0.5 + 0.5)[:, np.newaxis]
         breeze_tint = np.array([6.0, 14.0, 10.0], dtype=np.float32)

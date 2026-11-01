@@ -122,7 +122,7 @@ class ControlPanel(tk.Frame):
 
     def _build_widgets(self) -> None:
         grid_frame = tk.Frame(self, bg=self.BG_COLOR)
-        grid_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
+        grid_frame.pack(anchor=tk.CENTER, pady=6)
 
         # Row 1: Effect, Palette, Driver
         col1 = tk.LabelFrame(
@@ -264,12 +264,12 @@ class ControlPanel(tk.Frame):
         self._saturation_scale.grid(row=5, column=0, sticky="ew", pady=(0, 2))
 
         # FPS Slider
-        self._fps_label = tk.Label(col2, text="FPS Alvo: 30 FPS", bg=self.PANEL_BG, fg=self.TEXT_COLOR, font=("Segoe UI", 9))
+        self._fps_label = tk.Label(col2, text="FPS Alvo: 30 FPS (Hz)", bg=self.PANEL_BG, fg=self.TEXT_COLOR, font=("Segoe UI", 9))
         self._fps_label.grid(row=6, column=0, sticky="w")
         self._fps_scale = tk.Scale(
             col2,
             from_=15,
-            to=60,
+            to=120,
             resolution=5,
             orient=tk.HORIZONTAL,
             showvalue=0,
@@ -506,7 +506,7 @@ class ControlPanel(tk.Frame):
         self._on_control_changed()
 
     def _update_fps_label(self, val: str) -> None:
-        self._fps_label.config(text=f"FPS Alvo: {int(float(val))} FPS")
+        self._fps_label.config(text=f"FPS Alvo: {int(float(val))} FPS (Hz)")
         self._on_control_changed()
 
     def _update_flowers_label(self, val: str) -> None:

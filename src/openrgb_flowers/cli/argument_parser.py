@@ -42,7 +42,7 @@ class ArgumentParserBuilder:
             "--fps",
             type=float,
             default=30.0,
-            help="Target frames per second (15-60) / Taxa de quadros por segundo.",
+            help="Target frames per second (15-120) / Taxa de quadros por segundo.",
         )
         parser.add_argument(
             "--speed",
