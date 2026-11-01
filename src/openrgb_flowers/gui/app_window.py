@@ -29,7 +29,7 @@ class MainWindow(tk.Tk):
     TEXT_MUTED = "#94a3b8"
     ACCENT = "#38bdf8"
 
-    def __init__(self) -> None:
+    def __init__(self, start_minimized: bool = False, auto_start_effect: bool = True) -> None:
         super().__init__()
         self.title("🌸 OpenRGB & Redragon K556 - Centro de Iluminação RGB")
         self.geometry("900x620")
@@ -83,6 +83,23 @@ class MainWindow(tk.Tk):
         # Window closing and minimize-to-tray handlers
         self.bind("<Unmap>", self._on_window_unmap)
         self.protocol("WM_DELETE_WINDOW", self._on_window_close)
+
+        # If autostart / tray requested, start hidden in system tray
+        if start_minimized:
+            self.withdraw()
+
+        # Auto-start effect execution on hardware if enabled
+        if auto_start_effect:
+            self.after(150, self._auto_start_effect_if_enabled)
+
+    def _auto_start_effect_if_enabled(self) -> None:
+        """Automatically starts effect streaming if enabled in user preferences."""
+        try:
+            if self._control_panel.should_auto_start_effect() and not self._runner.is_running():
+                logger.info("Automatically launching effect on keyboard...")
+                self._control_panel.start_running()
+        except Exception as e:
+            logger.warning(f"Failed to auto-start effect: {e}")
 
     def _apply_window_icon(self) -> None:
         """Sets the application window icon using the official floral/RGB icon assets."""
@@ -187,7 +204,8 @@ class MainWindow(tk.Tk):
     def _render_preview_tick(self) -> None:
         """Renders real-time animation on canvas when effect is not actively transmitting to hardware."""
         try:
-            if not self._runner.is_running() and self._preview_engine is not None:
+            # Skip preview simulation entirely when window is hidden or withdrawn in tray
+            if self.state() != "withdrawn" and self.winfo_viewable() and not self._runner.is_running() and self._preview_engine is not None:
                 frame = self._preview_engine.tick(0.033)
                 self._canvas_frame.update_frame(frame)
         except Exception as e:
@@ -248,17 +266,22 @@ class MainWindow(tk.Tk):
             pass
 
     def _poll_frame_queue(self) -> None:
-        """Polls queue on main GUI thread and updates canvas."""
+        """Polls queue on main GUI thread and updates canvas with frame-skipping and visibility checks."""
         try:
+            is_visible = self.state() != "withdrawn" and self._canvas_frame.winfo_viewable()
+            last_frame = None
             while not self._frame_queue.empty():
                 frame = self._frame_queue.get_nowait()
-                self._canvas_frame.update_frame(frame)
+                if is_visible:
+                    last_frame = frame
+            if last_frame is not None:
+                self._canvas_frame.update_frame(last_frame)
         except Exception:
             pass
         finally:
             if not self._is_closing:
                 try:
-                    self._poll_job = self.after(20, self._poll_frame_queue)
+                    self._poll_job = self.after(33, self._poll_frame_queue)
                 except tk.TclError:
                     self._poll_job = None
 
@@ -339,8 +362,8 @@ class MainWindow(tk.Tk):
         self.after(0, _quit)
 
 
-def launch_gui() -> int:
+def launch_gui(start_minimized: bool = False, auto_start_effect: bool = True) -> int:
     """Entry point to launch the graphical user interface."""
-    app = MainWindow()
+    app = MainWindow(start_minimized=start_minimized, auto_start_effect=auto_start_effect)
     app.mainloop()
     return 0

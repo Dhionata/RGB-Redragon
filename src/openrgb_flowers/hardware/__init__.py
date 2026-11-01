@@ -7,6 +7,7 @@ from openrgb_flowers.hardware.openrgb_transmitter import OpenRGBTransmitter
 from openrgb_flowers.hardware.redragon_k556_transmitter import RedragonK556Transmitter
 from openrgb_flowers.hardware.mock_transmitter import MockTransmitter
 from openrgb_flowers.hardware.transmitter_factory import TransmitterFactory
+from openrgb_flowers.hardware.connection_retry_policy import ConnectionRetryPolicy
 
 __all__ = [
     "K556LayoutProvider",
@@ -17,4 +18,5 @@ __all__ = [
     "RedragonK556Transmitter",
     "MockTransmitter",
     "TransmitterFactory",
+    "ConnectionRetryPolicy",
 ]

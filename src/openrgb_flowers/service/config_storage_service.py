@@ -59,6 +59,16 @@ class ConfigStorageService(IConfigStorageService):
             fps=30.0,
         )
 
+    def load_extra_settings(self) -> Dict[str, Any]:
+        """Loads non-effect user preferences such as driver and automation toggles."""
+        if self._storage_path.exists():
+            try:
+                with open(self._storage_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"Failed to read extra settings from {self._storage_path}: {e}")
+        return {}
+
     def save_config(self, config: EffectConfig, extra_settings: Optional[Dict[str, Any]] = None) -> bool:
         """Saves current configuration and metadata to user config file."""
         try:

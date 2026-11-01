@@ -400,7 +400,7 @@ class ControlPanel(tk.Frame):
         )
         self._edit_status_lbl.grid(row=5, column=0, sticky="ew", pady=(2, 0))
 
-        # Checkbox: Iniciar com o Windows
+        # Checkbox 1: Iniciar com o Windows
         self._autostart_var = tk.BooleanVar(value=self._startup_service.is_enabled())
         self._chk_autostart = tk.Checkbutton(
             col3,
@@ -415,7 +415,41 @@ class ControlPanel(tk.Frame):
             font=("Segoe UI", 8),
             cursor="hand2",
         )
-        self._chk_autostart.grid(row=6, column=0, sticky="w", pady=(6, 0))
+        self._chk_autostart.grid(row=6, column=0, sticky="w", pady=(4, 0))
+
+        # Checkbox 2: Iniciar efeito automaticamente ao abrir
+        self._auto_start_effect_var = tk.BooleanVar(value=True)
+        self._chk_auto_start = tk.Checkbutton(
+            col3,
+            text=" Iniciar efeito automaticamente",
+            variable=self._auto_start_effect_var,
+            command=self._save_current_config,
+            bg=self.PANEL_BG,
+            fg=self.TEXT_COLOR,
+            selectcolor="#252a36",
+            activebackground=self.PANEL_BG,
+            activeforeground=self.TEXT_COLOR,
+            font=("Segoe UI", 8),
+            cursor="hand2",
+        )
+        self._chk_auto_start.grid(row=7, column=0, sticky="w", pady=(1, 0))
+
+        # Checkbox 3: Auto-aplicar ajustes ao vivo
+        self._live_apply_var = tk.BooleanVar(value=False)
+        self._chk_live_apply = tk.Checkbutton(
+            col3,
+            text=" Auto-aplicar ajustes ao vivo",
+            variable=self._live_apply_var,
+            command=self._save_current_config,
+            bg=self.PANEL_BG,
+            fg=self.TEXT_COLOR,
+            selectcolor="#252a36",
+            activebackground=self.PANEL_BG,
+            activeforeground=self.TEXT_COLOR,
+            font=("Segoe UI", 8),
+            cursor="hand2",
+        )
+        self._chk_live_apply.grid(row=8, column=0, sticky="w", pady=(1, 0))
 
     def _on_effect_selected(self, event=None) -> None:
         is_blooming = "blooming" in self._effect_var.get().lower()
@@ -432,16 +466,19 @@ class ControlPanel(tk.Frame):
         current = self.get_current_settings()
 
         if self._is_running:
-            # Check if settings differ from actively running config
-            dirty = self._check_is_dirty(current)
-            if dirty:
-                self._btn_apply.config(state=tk.NORMAL, bg=self.APPLY_COLOR, fg="#ffffff")
-                self._btn_undo.config(state=tk.NORMAL, bg=self.UNDO_COLOR, fg="#ffffff")
-                self._edit_status_lbl.config(text="✎ Modificações pendentes", fg="#38bdf8")
+            if self._live_apply_var.get():
+                self._trigger_apply()
             else:
-                self._btn_apply.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
-                self._btn_undo.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
-                self._edit_status_lbl.config(text="● Em execução no teclado", fg="#10b981")
+                # Check if settings differ from actively running config
+                dirty = self._check_is_dirty(current)
+                if dirty:
+                    self._btn_apply.config(state=tk.NORMAL, bg=self.APPLY_COLOR, fg="#ffffff")
+                    self._btn_undo.config(state=tk.NORMAL, bg=self.UNDO_COLOR, fg="#ffffff")
+                    self._edit_status_lbl.config(text="✎ Modificações pendentes", fg="#38bdf8")
+                else:
+                    self._btn_apply.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
+                    self._btn_undo.config(state=tk.DISABLED, bg="#374151", fg="#9ca3af")
+                    self._edit_status_lbl.config(text="● Em execução no teclado", fg="#10b981")
         else:
             # Idle/Preview mode: immediately notify listener to update preview canvas
             if self._on_change:
@@ -611,6 +648,23 @@ class ControlPanel(tk.Frame):
             self._update_fps_label(str(int(cfg.fps)))
             self._update_flowers_label(str(cfg.max_flowers))
             self._on_effect_selected()
+
+            # Restore non-effect preferences (driver, auto-start, live-apply)
+            extra = self._config_storage.load_extra_settings()
+            if "auto_start_effect" in extra:
+                self._auto_start_effect_var.set(bool(extra["auto_start_effect"]))
+            if "live_apply" in extra:
+                self._live_apply_var.set(bool(extra["live_apply"]))
+
+            saved_driver = str(extra.get("driver", "auto")).lower()
+            if "redragon" in saved_driver:
+                self._driver_var.set("Redragon K556 (Nativo USB HID)")
+            elif "openrgb" in saved_driver:
+                self._driver_var.set("OpenRGB SDK Server")
+            elif "mock" in saved_driver:
+                self._driver_var.set("Simulação (Mock)")
+            else:
+                self._driver_var.set("Auto (Detecta Redragon K556 / OpenRGB)")
         except Exception:
             pass
 
@@ -627,7 +681,21 @@ class ControlPanel(tk.Frame):
                 fps=settings["fps"],
                 max_flowers=settings.get("max_flowers", 7),
             )
-            self._config_storage.save_config(cfg, {"driver": settings.get("driver", "auto")})
+            extra_settings = {
+                "driver": settings.get("driver", "auto"),
+                "auto_start_effect": bool(self._auto_start_effect_var.get()),
+                "live_apply": bool(self._live_apply_var.get()),
+            }
+            self._config_storage.save_config(cfg, extra_settings)
         except Exception:
             pass
+
+    def should_auto_start_effect(self) -> bool:
+        """Returns True if user configured effect to launch automatically on application start."""
+        return bool(self._auto_start_effect_var.get())
+
+    def start_running(self) -> None:
+        """Triggers effect execution on hardware if currently stopped."""
+        if not self._is_running:
+            self._trigger_start()
 

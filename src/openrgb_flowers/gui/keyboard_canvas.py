@@ -40,6 +40,7 @@ class KeyboardCanvas(tk.Frame):
 
         self._rect_ids: List[int] = []
         self._text_ids: List[Optional[int]] = []
+        self._cached_colors: List[str] = []
         self._build_keys()
 
     def update_layout(self, layout_provider: ILayoutProvider) -> None:
@@ -52,10 +53,13 @@ class KeyboardCanvas(tk.Frame):
         self._canvas.delete("all")
         self._rect_ids.clear()
         self._text_ids.clear()
+        self._cached_colors.clear()
 
         keys = self._layout.get_coordinates()
         if not keys:
             return
+
+        self._cached_colors = [""] * len(keys)
 
         pad_x = 24
         pad_y = 20
@@ -127,7 +131,10 @@ class KeyboardCanvas(tk.Frame):
         return abbrevs.get(name_lower, name[:3].upper())
 
     def update_frame(self, frame: RenderFrame) -> None:
-        """Thread-safe update of keycap fill colors on the canvas."""
+        """Thread-safe update of keycap fill colors on the canvas with zero-work bypass when hidden."""
+        if not self.winfo_viewable():
+            return
+
         colors = frame.colors
         num_keys = min(len(self._rect_ids), colors.shape[0])
 
@@ -136,4 +143,7 @@ class KeyboardCanvas(tk.Frame):
             g = int(colors[i, 1])
             b = int(colors[i, 2])
             hex_color = f"#{r:02x}{g:02x}{b:02x}"
-            self._canvas.itemconfig(self._rect_ids[i], fill=hex_color)
+            if i >= len(self._cached_colors) or hex_color != self._cached_colors[i]:
+                if i < len(self._cached_colors):
+                    self._cached_colors[i] = hex_color
+                self._canvas.itemconfig(self._rect_ids[i], fill=hex_color)

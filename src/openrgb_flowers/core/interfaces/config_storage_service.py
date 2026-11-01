@@ -15,6 +15,11 @@ class IConfigStorageService(ABC):
         pass
 
     @abstractmethod
+    def load_extra_settings(self) -> Dict[str, Any]:
+        """Loads non-effect user preferences such as driver and automation toggles."""
+        pass
+
+    @abstractmethod
     def save_config(self, config: EffectConfig, extra_settings: Optional[Dict[str, Any]] = None) -> bool:
         """Saves current configuration and optional extra preferences to persistent storage."""
         pass

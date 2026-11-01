@@ -51,16 +51,18 @@ def main(args: Optional[list[str]] = None) -> int:
         logging.error("✗ Falha ao remover registro de inicialização.")
         return 1
 
-    # 0. Check if GUI mode requested
+    # 0. Check if Tray / Windows Autostart mode requested
+    if getattr(parsed_args, "autostart", False) or getattr(parsed_args, "tray", False):
+        from openrgb_flowers.gui.app_window import launch_gui
+        return launch_gui(start_minimized=True, auto_start_effect=True)
+
+    # Check if GUI mode requested
     if getattr(parsed_args, "gui", False):
         from openrgb_flowers.gui.app_window import launch_gui
-        return launch_gui()
+        auto_start = not getattr(parsed_args, "no_auto_start", False)
+        return launch_gui(start_minimized=False, auto_start_effect=auto_start)
 
-    # 1. Load or build config
-    if getattr(parsed_args, "autostart", False):
-        from openrgb_flowers.service.config_storage_service import ConfigStorageService
-        config = ConfigStorageService().load_config()
-        logging.info("Iniciando em segundo plano via autostart do Windows...")
+    # 1. Load or build config for CLI execution
     elif parsed_args.config:
         config = EffectConfig.load_json(parsed_args.config)
     else:

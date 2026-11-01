@@ -88,7 +88,16 @@ class GuiRunner:
                 port=config.port,
                 device_name=config.device_name,
             )
-            transmitter.connect()
+            from openrgb_flowers.hardware.connection_retry_policy import ConnectionRetryPolicy
+            retry_policy = ConnectionRetryPolicy(
+                max_attempts=12,
+                interval_seconds=1.5,
+                on_attempt=lambda cur, tot: self._on_status(f"Conectando ao hardware... ({cur}/{tot})", True),
+                is_cancelled=lambda: self._stop_event.is_set(),
+            )
+            if not retry_policy.execute_connect(transmitter):
+                self._on_status("Não foi possível conectar ao teclado (verifique conexão USB)", False)
+                return
 
             # 2. Resolve layout provider
             if isinstance(transmitter, RedragonK556Transmitter):
@@ -151,7 +160,11 @@ class GuiRunner:
 
                 # Tick engine & transmit frame
                 frame = engine.tick(dt)
-                transmitter.send_frame(frame)
+                success = transmitter.send_frame(frame)
+                if not success and not self._stop_event.is_set():
+                    logger.debug("Frame transmission error, attempting quick HID reconnect...")
+                    time.sleep(0.5)
+                    transmitter.connect()
 
                 # Dispatch frame to UI
                 self._on_frame(frame)

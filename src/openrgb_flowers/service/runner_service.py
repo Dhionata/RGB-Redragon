@@ -58,8 +58,15 @@ class RunnerService:
             # Signal handling may differ on some environments/threads
             pass
 
-        # Connect transmitter
-        self._transmitter.connect()
+        # Connect transmitter using resilient retry policy
+        from openrgb_flowers.hardware.connection_retry_policy import ConnectionRetryPolicy
+        retry_policy = ConnectionRetryPolicy(
+            max_attempts=6,
+            interval_seconds=1.5,
+            on_attempt=lambda cur, tot: logger.info(f"Conectando ao hardware... (tentativa {cur}/{tot})"),
+            is_cancelled=lambda: not self._running,
+        )
+        retry_policy.execute_connect(self._transmitter)
 
         if not self._transmitter.is_connected():
             if self._visualizer is not None:

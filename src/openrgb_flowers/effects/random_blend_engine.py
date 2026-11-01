@@ -47,15 +47,9 @@ class RandomBlendEngine(IEffectEngine):
         self._initialize_keys()
 
     def _sample_palette_colors(self, count: int) -> np.ndarray:
-        """Samples random colors from the active palette."""
-        random_positions = np.random.uniform(0.0, 1.0, size=count)
-        colors = np.zeros((count, 3), dtype=np.float32)
-        for i, pos in enumerate(random_positions):
-            c = self._palette.sample(float(pos))
-            colors[i, 0] = c.r
-            colors[i, 1] = c.g
-            colors[i, 2] = c.b
-        return colors
+        """Samples random colors from the active palette using high-performance vectorization."""
+        random_positions = np.random.uniform(0.0, 1.0, size=count).astype(np.float32)
+        return self._palette.sample_vectorized(random_positions)
 
     def _initialize_keys(self) -> None:
         """Seeds initial colors, targets, and asynchronous transition phases."""

@@ -170,13 +170,6 @@ class RedragonK556Transmitter(IFrameTransmitter):
             color_mv = memoryview(flat_colors)
             total_bytes = len(color_mv)
 
-            # Drain any pending read buffers non-blockingly
-            try:
-                while self._device.read(64):
-                    pass
-            except Exception:
-                pass
-
             # Update and transmit each chunk
             for c in range(self.NUM_CHUNKS):
                 pkt = self._packets[c]
